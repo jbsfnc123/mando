@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Produk dari Spreadsheet</title>
+    <title>Daftar Tagihan dari Spreadsheet</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,7 +12,7 @@
             color: #333;
         }
         .container {
-            max-width: 800px;
+            max-width: 900px; /* Lebarkan sedikit untuk data lebih banyak */
             margin: 0 auto;
             background-color: #fff;
             padding: 30px;
@@ -33,16 +33,17 @@
             border: 1px solid #ddd;
             padding: 10px;
             text-align: left;
+            word-wrap: break-word; /* Memastikan teks panjang pecah baris */
         }
         th {
             background-color: #007bff;
             color: white;
-            text-transform: capitalize; /* Untuk membuat header lebih rapi */
+            text-transform: capitalize;
         }
         tr:nth-child(even) {
             background-color: #f2f2f2;
         }
-        .loading, .error {
+        .loading, .error, .no-data {
             text-align: center;
             padding: 20px;
             font-size: 1.2em;
@@ -52,15 +53,21 @@
         }
         .error {
             color: #dc3545;
+            display: none;
+        }
+        .no-data {
+            color: #6c757d;
+            display: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Daftar Produk</h1>
+        <h1>Daftar Tagihan</h1>
         <div id="loading" class="loading">Memuat data...</div>
-        <div id="error" class="error" style="display:none;">Gagal memuat data. Mohon coba lagi nanti.</div>
-        <table id="product-table" style="display:none;">
+        <div id="error" class="error">Gagal memuat data. Mohon periksa konsol browser untuk detail error.</div>
+        <div id="no-data" class="no-data">Tidak ada data tagihan yang ditemukan atau format data tidak sesuai.</div>
+        <table id="data-table" style="display:none;">
             <thead>
                 <tr></tr> </thead>
             <tbody>
@@ -69,41 +76,69 @@
     </div>
 
     <script>
-        // API endpoint Anda
-        const API_URL = 'https://script.google.com/macros/s/AKfycbw60ON8peEOlW9J0nHktclLSwlqm8_ERgXKDRHkQaaqKPJPKkdUrRAlQBk6RBrYq6B4/exec';
+        // --- API endpoint Anda yang baru ---
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwJeZCzeK1Fu5fWeSn30ph-Xz4nbjnJ86RDSSYQKFK_nNwhNwKQGIIYwY6Jn4aRVpg/exec';
 
         const loadingDiv = document.getElementById('loading');
         const errorDiv = document.getElementById('error');
-        const productTable = document.getElementById('product-table');
-        const tableHeadRow = productTable.querySelector('thead tr');
-        const tableBody = productTable.querySelector('tbody');
+        const noDataDiv = document.getElementById('no-data');
+        const dataTable = document.getElementById('data-table');
+        const tableHeadRow = dataTable.querySelector('thead tr');
+        const tableBody = dataTable.querySelector('tbody');
 
-        // Fungsi untuk mengambil dan menampilkan data
+        function showError(message) {
+            loadingDiv.style.display = 'none';
+            dataTable.style.display = 'none';
+            noDataDiv.style.display = 'none';
+            errorDiv.style.display = 'block';
+            errorDiv.textContent = message;
+        }
+
+        function showNoData() {
+            loadingDiv.style.display = 'none';
+            dataTable.style.display = 'none';
+            errorDiv.style.display = 'none';
+            noDataDiv.style.display = 'block';
+        }
+
         async function fetchData() {
+            loadingDiv.style.display = 'block'; // Pastikan loading ditampilkan saat mulai
+
             try {
                 const response = await fetch(API_URL);
 
-                // Memeriksa jika respons tidak OK (misal: error server 404, 500)
+                console.log('Response Status:', response.status);
+                console.log('Content-Type:', response.headers.get('Content-Type'));
+
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error! status: ${response.status}. Pesan: ${errorText.substring(0, 200)}...`);
                 }
 
-                const data = await response.json(); // Mengubah respons menjadi JSON
+                const data = await response.json();
 
-                // Memastikan data adalah array dan tidak kosong
+                console.log('Data diterima:', data);
+
                 if (!Array.isArray(data) || data.length === 0) {
-                    throw new Error('Data yang diterima bukan array atau kosong.');
+                    showNoData();
+                    return;
                 }
 
-                // Menyembunyikan pesan loading
+                // Sembunyikan pesan loading dan error
                 loadingDiv.style.display = 'none';
-                // Menampilkan tabel
-                productTable.style.display = 'table';
+                errorDiv.style.display = 'none';
+                noDataDiv.style.display = 'none';
+                dataTable.style.display = 'table'; // Tampilkan tabel
+
+                // Bersihkan header dan body tabel sebelum menambahkan yang baru
+                tableHeadRow.innerHTML = '';
+                tableBody.innerHTML = '';
 
                 // Membuat header tabel
                 const headers = Object.keys(data[0]); // Mengambil kunci dari objek pertama sebagai header
                 headers.forEach(header => {
                     const th = document.createElement('th');
+                    // Anda bisa menyesuaikan teks header jika diperlukan (misal: "No WA" jadi "Nomor WhatsApp")
                     th.textContent = header;
                     tableHeadRow.appendChild(th);
                 });
@@ -113,16 +148,16 @@
                     const tr = document.createElement('tr');
                     headers.forEach(header => {
                         const td = document.createElement('td');
-                        td.textContent = item[header] || '-'; // Tampilkan '-' jika data kosong
+                        // Tampilkan nilai atau '-' jika kosong/null
+                        td.textContent = item[header] !== undefined && item[header] !== null ? item[header] : '-';
                         tr.appendChild(td);
                     });
                     tableBody.appendChild(tr);
                 });
 
             } catch (error) {
-                console.error('Error fetching data:', error);
-                loadingDiv.style.display = 'none'; // Sembunyikan loading
-                errorDiv.style.display = 'block';   // Tampilkan pesan error
+                console.error('Ada masalah dengan operasi fetch:', error);
+                showError('Gagal memuat data. Detail: ' + error.message);
             }
         }
 
