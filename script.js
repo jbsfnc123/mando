@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const incomeCategoryForm = document.getElementById('income-category-form'), expenseCategoryForm = document.getElementById('expense-category-form'), incomeCategoryList = document.getElementById('income-category-list'), expenseCategoryList = document.getElementById('expense-category-list');
     
     // --- State & Local Storage ---
-    // Perubahan struktur data: plannedIncomes & plannedExpenses sekarang adalah Object, bukan Array
     let state = {
         plannedIncomes: JSON.parse(localStorage.getItem('plannedIncomes')) || {},
         plannedExpenses: JSON.parse(localStorage.getItem('plannedExpenses')) || {},
@@ -24,7 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // Set untuk melacak notifikasi yang sudah muncul agar tidak duplikat
     let notifiedCategories = new Set();
 
     const saveData = () => {
@@ -36,25 +34,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const formatCurrency = (amount) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
 
-    // --- Fungsi Notifikasi ---
     const showNotification = (message) => {
         const notification = document.createElement('div');
         notification.className = 'notification';
         notification.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i><p>${message}</p>`;
         notificationContainer.appendChild(notification);
         
-        // Tampilkan notifikasi
         setTimeout(() => notification.classList.add('show'), 10);
-        // Sembunyikan setelah 5 detik
         setTimeout(() => notification.classList.remove('show'), 5000);
-        // Hapus dari DOM setelah animasi selesai
         setTimeout(() => notification.remove(), 5500);
     };
 
-    // --- Fungsi Render ---
-
     const renderDashboard = () => {
-        // Kalkulasi Total
         const totalPlannedIncome = Object.values(state.plannedIncomes).reduce((sum, amount) => sum + amount, 0);
         const totalPlannedExpense = Object.values(state.plannedExpenses).reduce((sum, amount) => sum + amount, 0);
         const totalActualIncome = state.transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
@@ -62,7 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentBalance = totalActualIncome - totalActualExpense;
         const expenseRatio = totalPlannedExpense > 0 ? (totalActualExpense / totalPlannedExpense) * 100 : 0;
 
-        // Update Kartu Total
         plannedIncomeEl.textContent = formatCurrency(totalPlannedIncome);
         actualIncomeEl.textContent = formatCurrency(totalActualIncome);
         plannedExpenseEl.textContent = formatCurrency(totalPlannedExpense);
@@ -72,7 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
         expenseProgressBar.style.width = `${Math.min(expenseRatio, 100)}%`;
         expenseProgressBar.style.backgroundColor = expenseRatio > 100 ? 'var(--red-color)' : expenseRatio > 80 ? 'var(--orange-color)' : 'var(--green-color)';
         
-        // Render Rincian Rasio per Kategori
         categoryRatiosContainer.innerHTML = '<h3 class="section-title">Rincian Rasio Pengeluaran</h3>';
         if (Object.keys(state.plannedExpenses).length === 0) {
             categoryRatiosContainer.innerHTML += '<p style="color: var(--text-secondary);">Belum ada rencana pengeluaran yang dibuat.</p>';
@@ -99,10 +88,9 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             categoryRatiosContainer.appendChild(item);
 
-            // Cek untuk notifikasi
             if (ratio >= 80 && !notifiedCategories.has(category)) {
                 showNotification(`Pengeluaran <b>${category}</b> sudah mencapai ${ratio.toFixed(0)}% dari rencana!`);
-                notifiedCategories.add(category); // Tandai sudah dinotifikasi
+                notifiedCategories.add(category);
             }
         }
     };
@@ -123,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    const renderTransactions = () => { /* (Tidak ada perubahan pada fungsi ini) */
+    const renderTransactions = () => {
         transactionTableBody.innerHTML = '';
         [...state.transactions].reverse().forEach((t, index) => {
             const originalIndex = state.transactions.length - 1 - index;
@@ -157,7 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
             expenseCategoryList.appendChild(li);
         });
         
-        // Update semua dropdown yang relevan
         populateDropdown(planIncomeCategory, state.categories.income);
         populateDropdown(planExpenseCategory, state.categories.expense);
         updateRealizationCategoryDropdown();
@@ -169,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const renderAll = () => {
-        saveData(); // Simpan state terbaru
+        saveData();
         renderDashboard();
         renderPlanning();
         renderTransactions();
@@ -182,14 +169,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById(item.getAttribute('data-view')).classList.add('active');
     }));
 
-    // Form Perencanaan (Logika Diperbarui)
     planIncomeForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const category = planIncomeCategory.value;
-        const amount = parseFloat(e.target.children[1].value);
+        const amountInput = e.target.querySelector('input[type="number"]');
+        const amount = parseFloat(amountInput.value);
         if (category && amount > 0) {
             state.plannedIncomes[category] = amount;
-            e.target.reset();
+            amountInput.value = ''; // --- PERBAIKAN --- Mengganti e.target.reset()
             renderAll();
         }
     });
@@ -197,15 +184,15 @@ document.addEventListener('DOMContentLoaded', () => {
     planExpenseForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const category = planExpenseCategory.value;
-        const amount = parseFloat(e.target.children[1].value);
+        const amountInput = e.target.querySelector('input[type="number"]');
+        const amount = parseFloat(amountInput.value);
         if (category && amount > 0) {
             state.plannedExpenses[category] = amount;
-            e.target.reset();
+            amountInput.value = ''; // --- PERBAIKAN --- Mengganti e.target.reset()
             renderAll();
         }
     });
 
-    // Hapus item perencanaan (Logika Diperbarui)
     document.getElementById('planning-view').addEventListener('click', (e) => {
         if (e.target.tagName === 'BUTTON') {
             const type = e.target.dataset.type;
@@ -213,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(type === 'income') delete state.plannedIncomes[category];
             if(type === 'expense') {
                 delete state.plannedExpenses[category];
-                notifiedCategories.delete(category); // Reset notifikasi jika rencana dihapus
+                notifiedCategories.delete(category);
             }
             renderAll();
         }
@@ -221,7 +208,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     transactionType.addEventListener('change', updateRealizationCategoryDropdown);
 
-    // Form Transaksi (Tidak ada perubahan)
     transactionForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const newTransaction = { id: Date.now(), date: new Date().toISOString(), type: document.getElementById('transaction-type').value, category: document.getElementById('transaction-category').value, description: document.getElementById('transaction-description').value, amount: parseFloat(document.getElementById('transaction-amount').value) };
@@ -237,7 +223,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Form Kategori (Tidak ada perubahan)
     const handleAddCategory = (form, type) => {
         form.addEventListener('submit', e => {
             e.preventDefault();
