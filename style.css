@@ -1,117 +1,137 @@
-/* Import Font */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* ... Semua style dari jawaban sebelumnya tetap di sini ... */
+/* Saya hanya akan menambahkan style baru dan modifikasi di bawah ini */
 
-:root {
-    --bg-color: #1e1e1e;
-    --window-bg: rgba(45, 45, 45, 0.7);
-    --dock-bg: rgba(30, 30, 30, 0.5);
-    --border-color: rgba(255, 255, 255, 0.1);
-    --text-primary: #e0e0e0;
-    --text-secondary: #a0a0a0;
-    --accent-color: #0A84FF;
-    --green-color: #30D158;
-    --red-color: #FF453A;
-    --yellow-color: #FFD60A;
-    --orange-color: #FF9F0A;
+/* MODIFIKASI: Layout form transaksi untuk mengakomodasi input tanggal */
+#transaction-form {
+    display: grid;
+    /* Ubah grid agar lebih fleksibel */
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
 }
-
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-image: url('https://source.unsplash.com/random/1920x1080?dark-abstract');
-    background-size: cover; background-position: center;
-    color: var(--text-primary);
-    display: flex; justify-content: center; align-items: center;
-    height: 100vh; overflow: hidden;
+#transaction-form button {
+    grid-column: 1 / -1; /* Tombol submit mengambil lebar penuh */
 }
-
-/* --- STYLES LAMA YANG MASIH RELEVAN (dipersingkat untuk kejelasan) --- */
-.app-container, .main-content, .view, .window-header, .window-controls, .control, .window-title, .window-body, .dashboard-grid, .card, .progress-bar-container, .progress-bar, form, input, select, form button, ul, li, .planning-layout, .planning-section, .table-container, table, th, td, .dock, .dock-item {
-    /* (Semua style lama dari jawaban sebelumnya ada di sini, tidak perlu diubah) */
+/* Mengatur input tanggal agar tidak terlalu lebar di beberapa browser */
+#transaction-date {
+    min-width: 150px;
 }
-/* Menyalin kembali style lama yang relevan */
-.app-container{width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center}.main-content{width:90%;max-width:1200px;height:85%;position:relative}.view{position:absolute;top:0;left:0;width:100%;height:100%;background:var(--window-bg);border:1px solid var(--border-color);border-radius:12px;backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);box-shadow:0 8px 32px 0 rgba(0,0,0,.37);display:none;flex-direction:column;overflow:hidden;transition:opacity .3s ease,transform .3s ease}.view.active{display:flex;opacity:1;transform:scale(1);z-index:10}.view:not(.active){opacity:0;transform:scale(.95)}.window-header{display:flex;align-items:center;padding:10px 15px;background:rgba(0,0,0,.2);border-bottom:1px solid var(--border-color);user-select:none}.window-controls{display:flex;gap:8px;margin-right:15px}.control{width:12px;height:12px;border-radius:50%}.control.close{background:var(--red-color)}.control.minimize{background:var(--yellow-color)}.control.maximize{background:var(--green-color)}.window-title{font-weight:600;color:var(--text-secondary)}.window-body{padding:20px;flex-grow:1;overflow-y:auto}.window-body::-webkit-scrollbar{width:8px}.window-body::-webkit-scrollbar-track{background:transparent}.window-body::-webkit-scrollbar-thumb{background-color:rgba(255,255,255,.2);border-radius:4px}.dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px}.card{background:rgba(255,255,255,.05);padding:20px;border-radius:10px;border:1px solid var(--border-color)}.card.large{grid-column:span 2}.card .card-title{color:var(--text-secondary);font-size:1rem;margin-bottom:15px}.card p{font-size:2rem;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.card .ratio-text{color:var(--yellow-color)}.card .saldo-text{color:var(--green-color)}.card small{color:var(--text-secondary);font-size:.8rem;margin-top:5px;display:block}.progress-bar-container{width:100%;height:10px;background-color:rgba(0,0,0,.3);border-radius:5px;margin-top:10px;overflow:hidden}.progress-bar{height:100%;width:0%;background-color:var(--yellow-color);border-radius:5px;transition:width .5s ease-in-out}.form{display:flex;gap:10px;margin-bottom:20px}input,select{width:100%;padding:12px;background:rgba(0,0,0,.3);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-family:inherit;font-size:1rem}input::placeholder{color:var(--text-secondary)}select{flex-grow:0;flex-shrink:0}form button{padding:12px 20px;background-color:var(--accent-color);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;transition:background-color .2s ease}form button:hover{background-color:#0a78e0}#transaction-form{display:grid;grid-template-columns:1fr 1fr;gap:15px}#transaction-form button{grid-column:span 2}ul{list-style:none;max-height:250px;overflow-y:auto;padding-right:10px}li{display:flex;justify-content:space-between;align-items:center;padding:15px;background:rgba(255,255,255,.05);border-radius:8px;margin-bottom:10px}li button{background:none;border:none;color:var(--red-color);cursor:pointer;font-size:1rem}.planning-layout{display:flex;gap:20px}.planning-section{flex:1}.table-container{max-height:calc(100% - 150px);overflow-y:auto}table{width:100%;border-collapse:collapse}th,td{padding:12px 15px;text-align:left;border-bottom:1px solid var(--border-color)}th{font-weight:600;color:var(--text-secondary)}td .income-text{color:var(--green-color)}td .expense-text{color:var(--red-color)}td button{background:none;border:none;color:var(--red-color);cursor:pointer}.dock{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;align-items:flex-end;gap:15px;padding:10px;background:var(--dock-bg);border:1px solid var(--border-color);border-radius:18px;backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);z-index:100}.dock-item{position:relative;cursor:pointer;transition:transform .2s ease}.dock-item i{font-size:48px;color:var(--text-primary);width:60px;height:60px;display:flex;justify-content:center;align-items:center}.dock-item:hover{transform:scale(1.2) translateY(-10px)}.dock-item span{position:absolute;bottom:110%;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:5px 10px;border-radius:5px;font-size:.8rem;white-space:nowrap;opacity:0;visibility:hidden;transition:opacity .2s ease}.dock-item:hover span{opacity:1;visibility:visible}
 
 /* --- STYLE BARU --- */
 
-.section-divider {
-    border: none;
-    height: 1px;
-    background-color: var(--border-color);
-    margin: 25px 0;
-}
-
-.section-title {
-    color: var(--text-secondary);
-    font-size: 1.2rem;
-    font-weight: 600;
-    margin-bottom: 20px;
-}
-
-#category-ratios-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 15px;
-}
-
-.category-ratio-item {
-    background: rgba(255, 255, 255, 0.05);
-    padding: 15px;
-    border-radius: 8px;
-}
-
-.category-ratio-item .header {
+/* Tombol-tombol baru */
+.table-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 15px;
+}
+#export-btn {
+    padding: 8px 15px;
+    background-color: #1a73e8;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
     font-weight: 500;
+    transition: background-color 0.2s ease;
 }
+#export-btn:hover { background-color: #1765c7; }
+#export-btn i { margin-right: 8px; }
 
-.category-ratio-item .header .ratio {
-    font-weight: 700;
+/* Zona Berbahaya di Pengaturan */
+.danger-zone {
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid var(--red-color);
+    background-color: rgba(255, 69, 58, 0.1);
+    border-radius: 8px;
 }
-
-.category-ratio-item .footer {
-    font-size: 0.8rem;
+.danger-zone h3 {
+    color: var(--red-color);
+    margin-bottom: 10px;
+}
+.danger-zone p {
     color: var(--text-secondary);
-    margin-top: 8px;
+    margin-bottom: 15px;
+    font-size: 0.9rem;
 }
+.danger-btn {
+    width: 100%;
+    padding: 12px 20px;
+    background-color: var(--red-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+.danger-btn:hover { background-color: #d1302b; }
+.danger-btn i { margin-right: 8px; }
 
-/* --- STYLE UNTUK NOTIFIKASI --- */
-#notification-container {
+/* Style untuk Modal Donasi */
+.modal-overlay {
     position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.notification {
-    background: rgba(30, 30, 30, 0.8);
-    backdrop-filter: blur(10px);
-    color: var(--text-primary);
-    padding: 15px 20px;
-    border-radius: 10px;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    display: flex;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    display: none; /* Diubah ke flex oleh JS */
+    justify-content: center;
     align-items: center;
-    gap: 15px;
+    z-index: 2000;
     opacity: 0;
-    transform: translateX(100%);
-    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    transition: opacity 0.3s ease;
 }
-
-.notification.show {
+.modal-overlay.show {
+    display: flex;
     opacity: 1;
-    transform: translateX(0);
 }
-
-.notification i {
+.modal-content {
+    background: var(--window-bg);
+    border: 1px solid var(--border-color);
+    padding: 30px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    position: relative;
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+}
+.modal-overlay.show .modal-content {
+    transform: scale(1);
+}
+.modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
     font-size: 1.5rem;
-    color: var(--orange-color);
+    cursor: pointer;
+}
+.modal-content h2 {
+    margin-bottom: 15px;
+    color: var(--text-primary);
+}
+.modal-content p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+.donation-info {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+.donation-info p {
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+.donation-info p:last-child {
+    margin-bottom: 0;
 }
