@@ -1,46 +1,29 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- Elemen DOM ---
+    const notificationContainer = document.getElementById('notification-container');
     const views = document.querySelectorAll('.view');
     const dockItems = document.querySelectorAll('.dock-item');
-
     // Dashboard
-    const plannedIncomeEl = document.getElementById('planned-income');
-    const actualIncomeEl = document.getElementById('actual-income');
-    const plannedExpenseEl = document.getElementById('planned-expense');
-    const actualExpenseEl = document.getElementById('actual-expense');
-    const expenseRatioEl = document.getElementById('expense-ratio');
-    const expenseProgressBar = document.getElementById('expense-progress-bar');
-    const currentBalanceEl = document.getElementById('current-balance');
-
+    const plannedIncomeEl = document.getElementById('planned-income'), actualIncomeEl = document.getElementById('actual-income'), plannedExpenseEl = document.getElementById('planned-expense'), actualExpenseEl = document.getElementById('actual-expense'), expenseRatioEl = document.getElementById('expense-ratio'), expenseProgressBar = document.getElementById('expense-progress-bar'), currentBalanceEl = document.getElementById('current-balance'), categoryRatiosContainer = document.getElementById('category-ratios-container');
     // Perencanaan
-    const planIncomeForm = document.getElementById('plan-income-form');
-    const planExpenseForm = document.getElementById('plan-expense-form');
-    const planIncomeList = document.getElementById('plan-income-list');
-    const planExpenseList = document.getElementById('plan-expense-list');
-
+    const planIncomeForm = document.getElementById('plan-income-form'), planExpenseForm = document.getElementById('plan-expense-form'), planIncomeList = document.getElementById('plan-income-list'), planExpenseList = document.getElementById('plan-expense-list'), planIncomeCategory = document.getElementById('plan-income-category'), planExpenseCategory = document.getElementById('plan-expense-category');
     // Realisasi
-    const transactionForm = document.getElementById('transaction-form');
-    const transactionType = document.getElementById('transaction-type');
-    const transactionCategory = document.getElementById('transaction-category');
-    const transactionTableBody = document.querySelector('#transaction-table tbody');
-
+    const transactionForm = document.getElementById('transaction-form'), transactionType = document.getElementById('transaction-type'), transactionCategory = document.getElementById('transaction-category'), transactionTableBody = document.querySelector('#transaction-table tbody');
     // Pengaturan Kategori
-    const incomeCategoryForm = document.getElementById('income-category-form');
-    const expenseCategoryForm = document.getElementById('expense-category-form');
-    const incomeCategoryList = document.getElementById('income-category-list');
-    const expenseCategoryList = document.getElementById('expense-category-list');
-
-
+    const incomeCategoryForm = document.getElementById('income-category-form'), expenseCategoryForm = document.getElementById('expense-category-form'), incomeCategoryList = document.getElementById('income-category-list'), expenseCategoryList = document.getElementById('expense-category-list');
+    
     // --- State & Local Storage ---
     let state = {
-        plannedIncomes: JSON.parse(localStorage.getItem('plannedIncomes')) || [],
-        plannedExpenses: JSON.parse(localStorage.getItem('plannedExpenses')) || [],
+        plannedIncomes: JSON.parse(localStorage.getItem('plannedIncomes')) || {},
+        plannedExpenses: JSON.parse(localStorage.getItem('plannedExpenses')) || {},
         transactions: JSON.parse(localStorage.getItem('transactions')) || [],
         categories: JSON.parse(localStorage.getItem('categories')) || {
             income: ['Gaji', 'Bonus'],
             expense: ['Makanan', 'Transportasi', 'Tagihan', 'Hiburan']
         }
     };
+    
+    let notifiedCategories = new Set();
 
     const saveData = () => {
         localStorage.setItem('plannedIncomes', JSON.stringify(state.plannedIncomes));
@@ -49,26 +32,25 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('categories', JSON.stringify(state.categories));
     };
 
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+    const formatCurrency = (amount) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+
+    const showNotification = (message) => {
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+        notification.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i><p>${message}</p>`;
+        notificationContainer.appendChild(notification);
+        
+        setTimeout(() => notification.classList.add('show'), 10);
+        setTimeout(() => notification.classList.remove('show'), 5000);
+        setTimeout(() => notification.remove(), 5500);
     };
 
-    // --- Fungsi Render ---
-
     const renderDashboard = () => {
-        const totalPlannedIncome = state.plannedIncomes.reduce((sum, item) => sum + item.amount, 0);
-        const totalPlannedExpense = state.plannedExpenses.reduce((sum, item) => sum + item.amount, 0);
-
-        const totalActualIncome = state.transactions
-            .filter(t => t.type === 'income')
-            .reduce((sum, t) => sum + t.amount, 0);
-
-        const totalActualExpense = state.transactions
-            .filter(t => t.type === 'expense')
-            .reduce((sum, t) => sum + t.amount, 0);
-
+        const totalPlannedIncome = Object.values(state.plannedIncomes).reduce((sum, amount) => sum + amount, 0);
+        const totalPlannedExpense = Object.values(state.plannedExpenses).reduce((sum, amount) => sum + amount, 0);
+        const totalActualIncome = state.transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+        const totalActualExpense = state.transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
         const currentBalance = totalActualIncome - totalActualExpense;
-
         const expenseRatio = totalPlannedExpense > 0 ? (totalActualExpense / totalPlannedExpense) * 100 : 0;
 
         plannedIncomeEl.textContent = formatCurrency(totalPlannedIncome);
@@ -77,37 +59,56 @@ document.addEventListener('DOMContentLoaded', () => {
         actualExpenseEl.textContent = formatCurrency(totalActualExpense);
         currentBalanceEl.textContent = formatCurrency(currentBalance);
         expenseRatioEl.textContent = `${expenseRatio.toFixed(1)}%`;
-        
         expenseProgressBar.style.width = `${Math.min(expenseRatio, 100)}%`;
-        if (expenseRatio > 100) {
-            expenseProgressBar.style.backgroundColor = 'var(--red-color)';
-        } else if (expenseRatio > 75) {
-            expenseProgressBar.style.backgroundColor = 'var(--yellow-color)';
-        } else {
-            expenseProgressBar.style.backgroundColor = 'var(--green-color)';
+        expenseProgressBar.style.backgroundColor = expenseRatio > 100 ? 'var(--red-color)' : expenseRatio > 80 ? 'var(--orange-color)' : 'var(--green-color)';
+        
+        categoryRatiosContainer.innerHTML = '<h3 class="section-title">Rincian Rasio Pengeluaran</h3>';
+        if (Object.keys(state.plannedExpenses).length === 0) {
+            categoryRatiosContainer.innerHTML += '<p style="color: var(--text-secondary);">Belum ada rencana pengeluaran yang dibuat.</p>';
+        }
+
+        for (const category in state.plannedExpenses) {
+            const planned = state.plannedExpenses[category];
+            const actual = state.transactions
+                .filter(t => t.type === 'expense' && t.category === category)
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const ratio = planned > 0 ? (actual / planned) * 100 : 0;
+            const item = document.createElement('div');
+            item.className = 'category-ratio-item';
+            item.innerHTML = `
+                <div class="header">
+                    <span class="name">${category}</span>
+                    <span class="ratio" style="color: ${ratio > 100 ? 'var(--red-color)' : ratio > 80 ? 'var(--orange-color)' : 'var(--text-primary)'}">${ratio.toFixed(1)}%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: ${Math.min(ratio, 100)}%; background-color: ${ratio > 100 ? 'var(--red-color)' : ratio > 80 ? 'var(--orange-color)' : 'var(--accent-color)'};"></div>
+                </div>
+                <div class="footer">${formatCurrency(actual)} / ${formatCurrency(planned)}</div>
+            `;
+            categoryRatiosContainer.appendChild(item);
+
+            if (ratio >= 80 && !notifiedCategories.has(category)) {
+                showNotification(`Pengeluaran <b>${category}</b> sudah mencapai ${ratio.toFixed(0)}% dari rencana!`);
+                notifiedCategories.add(category);
+            }
         }
     };
 
     const renderPlanning = () => {
         planIncomeList.innerHTML = '';
-        state.plannedIncomes.forEach((item, index) => {
+        for(const category in state.plannedIncomes){
             const li = document.createElement('li');
-            li.innerHTML = `
-                <span>${item.name} - ${formatCurrency(item.amount)}</span>
-                <button data-index="${index}" data-type="income">&times;</button>
-            `;
+            li.innerHTML = `<span>${category} - ${formatCurrency(state.plannedIncomes[category])}</span><button data-category="${category}" data-type="income">&times;</button>`;
             planIncomeList.appendChild(li);
-        });
+        }
 
         planExpenseList.innerHTML = '';
-        state.plannedExpenses.forEach((item, index) => {
+        for(const category in state.plannedExpenses){
             const li = document.createElement('li');
-            li.innerHTML = `
-                <span>${item.name} - ${formatCurrency(item.amount)}</span>
-                <button data-index="${index}" data-type="expense">&times;</button>
-            `;
+            li.innerHTML = `<span>${category} - ${formatCurrency(state.plannedExpenses[category])}</span><button data-category="${category}" data-type="expense">&times;</button>`;
             planExpenseList.appendChild(li);
-        });
+        }
     };
     
     const renderTransactions = () => {
@@ -115,15 +116,17 @@ document.addEventListener('DOMContentLoaded', () => {
         [...state.transactions].reverse().forEach((t, index) => {
             const originalIndex = state.transactions.length - 1 - index;
             const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${new Date(t.date).toLocaleDateString('id-ID')}</td>
-                <td class="${t.type}-text">${t.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</td>
-                <td>${t.category}</td>
-                <td>${t.description}</td>
-                <td>${formatCurrency(t.amount)}</td>
-                <td><button data-index="${originalIndex}">&times;</button></td>
-            `;
+            row.innerHTML = `<td>${new Date(t.date).toLocaleDateString('id-ID')}</td><td class="${t.type}-text">${t.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</td><td>${t.category}</td><td>${t.description}</td><td>${formatCurrency(t.amount)}</td><td><button data-index="${originalIndex}">&times;</button></td>`;
             transactionTableBody.appendChild(row);
+        });
+    };
+
+    const populateDropdown = (selectElement, categories) => {
+        selectElement.innerHTML = '';
+        categories.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat; option.textContent = cat;
+            selectElement.appendChild(option);
         });
     };
 
@@ -141,123 +144,109 @@ document.addEventListener('DOMContentLoaded', () => {
             li.innerHTML = `<span>${cat}</span> <button data-index="${index}" data-type="expense">&times;</button>`;
             expenseCategoryList.appendChild(li);
         });
-        updateCategoryDropdown();
+        
+        populateDropdown(planIncomeCategory, state.categories.income);
+        populateDropdown(planExpenseCategory, state.categories.expense);
+        updateRealizationCategoryDropdown();
     };
 
-    const updateCategoryDropdown = () => {
-        transactionCategory.innerHTML = '';
+    const updateRealizationCategoryDropdown = () => {
         const currentType = transactionType.value;
-        const categories = state.categories[currentType];
-        categories.forEach(cat => {
-            const option = document.createElement('option');
-            option.value = cat;
-            option.textContent = cat;
-            transactionCategory.appendChild(option);
-        });
+        populateDropdown(transactionCategory, state.categories[currentType]);
     };
 
     const renderAll = () => {
+        saveData();
         renderDashboard();
         renderPlanning();
         renderTransactions();
         renderCategories();
-        saveData();
     };
 
     // --- Event Listeners ---
-    
-    // Navigasi Dock
-    dockItems.forEach(item => {
-        item.addEventListener('click', () => {
-            views.forEach(view => view.classList.remove('active'));
-            const viewId = item.getAttribute('data-view');
-            document.getElementById(viewId).classList.add('active');
-        });
-    });
+    dockItems.forEach(item => item.addEventListener('click', () => {
+        views.forEach(view => view.classList.remove('active'));
+        document.getElementById(item.getAttribute('data-view')).classList.add('active');
+    }));
 
-    // Form Perencanaan
+    // --- PERBAIKAN FINAL ---
+    // Logika diubah untuk membaca elemen form secara langsung dari event.
     planIncomeForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const name = e.target.children[0].value;
-        const amount = parseFloat(e.target.children[1].value);
-        if (name && amount > 0) {
-            state.plannedIncomes.push({ name, amount });
-            e.target.reset();
+        const categorySelect = e.target.querySelector('select');
+        const amountInput = e.target.querySelector('input[type="number"]');
+        
+        const category = categorySelect.value;
+        const amount = parseFloat(amountInput.value);
+
+        if (category && amount > 0) {
+            state.plannedIncomes[category] = amount;
+            amountInput.value = ''; // Hanya kosongkan input jumlah
             renderAll();
         }
     });
 
+    // --- PERBAIKAN FINAL ---
+    // Logika diubah untuk membaca elemen form secara langsung dari event.
     planExpenseForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const name = e.target.children[0].value;
-        const amount = parseFloat(e.target.children[1].value);
-        if (name && amount > 0) {
-            state.plannedExpenses.push({ name, amount });
-            e.target.reset();
+        const categorySelect = e.target.querySelector('select');
+        const amountInput = e.target.querySelector('input[type="number"]');
+
+        const category = categorySelect.value;
+        const amount = parseFloat(amountInput.value);
+
+        if (category && amount > 0) {
+            state.plannedExpenses[category] = amount;
+            amountInput.value = ''; // Hanya kosongkan input jumlah
             renderAll();
         }
     });
-    
-    // Hapus item perencanaan
+
     document.getElementById('planning-view').addEventListener('click', (e) => {
         if (e.target.tagName === 'BUTTON') {
             const type = e.target.dataset.type;
-            const index = parseInt(e.target.dataset.index);
-            if(type === 'income') state.plannedIncomes.splice(index, 1);
-            if(type === 'expense') state.plannedExpenses.splice(index, 1);
+            const category = e.target.dataset.category;
+            if(type === 'income') delete state.plannedIncomes[category];
+            if(type === 'expense') {
+                delete state.plannedExpenses[category];
+                notifiedCategories.delete(category);
+            }
             renderAll();
         }
     });
-
-    // Form Transaksi
-    transactionType.addEventListener('change', updateCategoryDropdown);
+    
+    transactionType.addEventListener('change', updateRealizationCategoryDropdown);
 
     transactionForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const newTransaction = {
-            id: Date.now(),
-            date: new Date().toISOString(),
-            type: document.getElementById('transaction-type').value,
-            category: document.getElementById('transaction-category').value,
-            description: document.getElementById('transaction-description').value,
-            amount: parseFloat(document.getElementById('transaction-amount').value),
-        };
+        const newTransaction = { id: Date.now(), date: new Date().toISOString(), type: document.getElementById('transaction-type').value, category: document.getElementById('transaction-category').value, description: document.getElementById('transaction-description').value, amount: parseFloat(document.getElementById('transaction-amount').value) };
         state.transactions.push(newTransaction);
         transactionForm.reset();
         renderAll();
     });
 
-    // Hapus Transaksi
     transactionTableBody.addEventListener('click', (e) => {
         if (e.target.tagName === 'BUTTON') {
-            const index = parseInt(e.target.dataset.index);
-            state.transactions.splice(index, 1);
+            state.transactions.splice(parseInt(e.target.dataset.index), 1);
             renderAll();
         }
     });
 
-    // Form Kategori
-    incomeCategoryForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const newCat = e.target.children[0].value.trim();
-        if (newCat && !state.categories.income.includes(newCat)) {
-            state.categories.income.push(newCat);
-            e.target.reset();
-            renderAll();
-        }
-    });
+    const handleAddCategory = (form, type) => {
+        form.addEventListener('submit', e => {
+            e.preventDefault();
+            const newCat = e.target.children[0].value.trim();
+            if (newCat && !state.categories[type].includes(newCat)) {
+                state.categories[type].push(newCat);
+                e.target.reset();
+                renderAll();
+            }
+        });
+    };
+    handleAddCategory(incomeCategoryForm, 'income');
+    handleAddCategory(expenseCategoryForm, 'expense');
 
-    expenseCategoryForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const newCat = e.target.children[0].value.trim();
-        if (newCat && !state.categories.expense.includes(newCat)) {
-            state.categories.expense.push(newCat);
-            e.target.reset();
-            renderAll();
-        }
-    });
-
-    // Hapus Kategori
     document.getElementById('settings-view').addEventListener('click', (e) => {
          if (e.target.tagName === 'BUTTON') {
             const type = e.target.dataset.type;
