@@ -9,29 +9,50 @@
 </head>
 <body>
 
-    <div id="notification-container"></div>
-
     <div class="app-container">
         <main class="main-content">
 
             <div id="dashboard-view" class="view active">
                 <div class="window-header">
-                    <div class="window-controls"><span class="control close"></span><span class="control minimize"></span><span class="control maximize"></span></div>
+                    <div class="window-controls">
+                        <span class="control close"></span>
+                        <span class="control minimize"></span>
+                        <span class="control maximize"></span>
+                    </div>
                     <div class="window-title">Dashboard Analisis</div>
                 </div>
                 <div class="window-body">
                     <div class="dashboard-grid">
-                        <div class="card"><h3 class="card-title">Rencana Pemasukan</h3><p id="planned-income">Rp 0</p></div>
-                        <div class="card"><h3 class="card-title">Realisasi Pemasukan</h3><p id="actual-income">Rp 0</p></div>
-                        <div class="card"><h3 class="card-title">Rencana Pengeluaran</h3><p id="planned-expense">Rp 0</p></div>
-                        <div class="card"><h3 class="card-title">Realisasi Pengeluaran</h3><p id="actual-expense">Rp 0</p></div>
-                        <div class="card large"><h3 class="card-title">Rasio Total Pengeluaran</h3><p class="ratio-text" id="expense-ratio">0%</p><div class="progress-bar-container"><div class="progress-bar" id="expense-progress-bar"></div></div><small>Realisasi / Rencana Pengeluaran</small></div>
-                        <div class="card large"><h3 class="card-title">Sisa Uang (Saldo)</h3><p class="saldo-text" id="current-balance">Rp 0</p><small>Realisasi Pemasukan - Realisasi Pengeluaran</small></div>
-                    </div>
-                    <hr class="section-divider">
-                    <div id="category-ratios-container">
-                        <h3 class="section-title">Rincian Rasio Pengeluaran</h3>
+                        <div class="card">
+                            <h3>Rencana Pemasukan</h3>
+                            <p id="planned-income">Rp 0</p>
                         </div>
+                        <div class="card">
+                            <h3>Realisasi Pemasukan</h3>
+                            <p id="actual-income">Rp 0</p>
+                        </div>
+                        <div class="card">
+                            <h3>Rencana Pengeluaran</h3>
+                            <p id="planned-expense">Rp 0</p>
+                        </div>
+                        <div class="card">
+                            <h3>Realisasi Pengeluaran</h3>
+                            <p id="actual-expense">Rp 0</p>
+                        </div>
+                        <div class="card large">
+                            <h3>Rasio Pengeluaran</h3>
+                            <p class="ratio-text" id="expense-ratio">0%</p>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" id="expense-progress-bar"></div>
+                            </div>
+                            <small>Realisasi Pengeluaran / Rencana Pengeluaran</small>
+                        </div>
+                         <div class="card large">
+                            <h3>Sisa Uang</h3>
+                            <p class="saldo-text" id="current-balance">Rp 0</p>
+                             <small>Realisasi Pemasukan - Realisasi Pengeluaran</small>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -44,18 +65,18 @@
                     <div class="planning-section">
                         <h3>Rencana Pemasukan</h3>
                         <form id="plan-income-form">
-                            <select id="plan-income-category" required></select>
+                            <input type="text" placeholder="Nama Pemasukan (e.g., Gaji)" required>
                             <input type="number" placeholder="Jumlah" required>
-                            <button type="submit">Simpan</button>
+                            <button type="submit">Tambah</button>
                         </form>
                         <ul id="plan-income-list"></ul>
                     </div>
                     <div class="planning-section">
                         <h3>Rencana Pengeluaran</h3>
                         <form id="plan-expense-form">
-                            <select id="plan-expense-category" required></select>
+                            <input type="text" placeholder="Nama Pengeluaran (e.g., Sewa)" required>
                             <input type="number" placeholder="Jumlah" required>
-                            <button type="submit">Simpan</button>
+                            <button type="submit">Tambah</button>
                         </form>
                         <ul id="plan-expense-list"></ul>
                     </div>
@@ -83,13 +104,23 @@
                     <h3>Riwayat Transaksi</h3>
                     <div class="table-container">
                         <table id="transaction-table">
-                            <thead><tr><th>Tanggal</th><th>Jenis</th><th>Kategori</th><th>Deskripsi</th><th>Jumlah</th><th>Aksi</th></tr></thead>
-                            <tbody></tbody>
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>Jenis</th>
+                                    <th>Kategori</th>
+                                    <th>Deskripsi</th>
+                                    <th>Jumlah</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                </tbody>
                         </table>
                     </div>
                 </div>
             </div>
-            
+
             <div id="settings-view" class="view">
                  <div class="window-header">
                      <div class="window-controls"><span class="control close"></span><span class="control minimize"></span><span class="control maximize"></span></div>
@@ -118,10 +149,22 @@
         </main>
 
         <nav class="dock">
-            <div class="dock-item" data-view="dashboard-view" title="Dashboard"><i class="fa-solid fa-chart-pie"></i><span>Dashboard</span></div>
-            <div class="dock-item" data-view="planning-view" title="Perencanaan"><i class="fa-solid fa-calendar-days"></i><span>Perencanaan</span></div>
-            <div class="dock-item" data-view="realization-view" title="Realisasi"><i class="fa-solid fa-money-bill-transfer"></i><span>Realisasi</span></div>
-            <div class="dock-item" data-view="settings-view" title="Pengaturan"><i class="fa-solid fa-gears"></i><span>Pengaturan</span></div>
+            <div class="dock-item" data-view="dashboard-view" title="Dashboard">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Dashboard</span>
+            </div>
+            <div class="dock-item" data-view="planning-view" title="Perencanaan">
+                <i class="fa-solid fa-calendar-days"></i>
+                <span>Perencanaan</span>
+            </div>
+            <div class="dock-item" data-view="realization-view" title="Realisasi">
+                <i class="fa-solid fa-money-bill-transfer"></i>
+                <span>Realisasi</span>
+            </div>
+            <div class="dock-item" data-view="settings-view" title="Pengaturan">
+                <i class="fa-solid fa-gears"></i>
+                <span>Pengaturan</span>
+            </div>
         </nav>
     </div>
 
