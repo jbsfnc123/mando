@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // =================================================================================
     // PASTE URL WEB APP DARI GOOGLE APPS SCRIPT ANDA DI SINI
     // =================================================================================
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyZSkAtzLNDPO_xfTQ_cOTJFmfnltlZIyLMWTO_-2IkYDJW-1eyE56LFKCQXcyRIRWy/exec'; 
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwJIGQ3sLk8qFIOjb-coYpP8_s1JrYhb-NFAXuyPd5PCeLkvlfzUxv5gkepq6EDB-zU/exec'; 
     // =================================================================================
 
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCJulpWQwI2qu1Lji-iLvxSJkdHMpMBUwAQl7i4KIt34eV-_MrZTl_JgueGhiwopPodWP-NzO1b3Dj/pub?output=csv';
