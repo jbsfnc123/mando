@@ -3,238 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Prompt Generator</title>
-    
-    <!-- Tailwind CSS from CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        /* Menggunakan font Inter sebagai default untuk seluruh halaman */
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-    </style>
+    <title>Personal Finance Planner - macOS Style</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body>
 
-    <div class="container mx-auto max-w-5xl p-4 sm:p-6 lg:p-8">
-        
-        <!-- Header Utama -->
-        <header class="text-center mb-10">
-            <h1 class="text-3xl sm:text-4xl font-bold text-slate-900">AI Prompt Generator</h1>
-            <p class="mt-2 text-md sm:text-lg text-slate-600">Buat deskripsi gambar yang detail dan terstruktur untuk hasil terbaik.</p>
-        </header>
+    <div class="app-container">
+        <main class="main-content">
 
-        <!-- Formulir utama yang membungkus semua input -->
-        <form id="prompt-form" action="#" method="POST" onsubmit="event.preventDefault();">
-            <div class="space-y-12">
-
-                <!-- ===== BAGIAN 1: DESKRIPSI UTAMA GAMBAR ===== -->
-                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg border border-slate-200">
-                    <h2 class="text-xl sm:text-2xl font-semibold leading-7 text-slate-900 border-b border-slate-200 pb-4 mb-8">
-                        1. Deskripsi Utama Gambar
-                    </h2>
-                    <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-                        
-                        <div class="sm:col-span-3">
-                            <label for="main-subject" class="block text-sm font-medium leading-6 text-slate-900">Subjek Utama / Aksi</label>
-                            <div class="mt-2">
-                                <input type="text" name="main-subject" id="main-subject" placeholder="Contoh: Astronot sedang menunggangi kuda" class="block w-full rounded-md border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 transition">
-                            </div>
+            <div id="dashboard-view" class="view active">
+                <div class="window-header">
+                    <div class="window-controls">
+                        <span class="control close"></span>
+                        <span class="control minimize"></span>
+                        <span class="control maximize"></span>
+                    </div>
+                    <div class="window-title">Dashboard Analisis</div>
+                </div>
+                <div class="window-body">
+                    <div class="dashboard-grid">
+                        <div class="card">
+                            <h3>Rencana Pemasukan</h3>
+                            <p id="planned-income">Rp 0</p>
                         </div>
-
-                        <div class="sm:col-span-3">
-                            <label for="background" class="block text-sm font-medium leading-6 text-slate-900">Lingkungan / Latar Belakang</label>
-                            <div class="mt-2">
-                                <input type="text" name="background" id="background" placeholder="Contoh: Di planet Mars dengan pemandangan futuristik" class="block w-full rounded-md border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 transition">
-                            </div>
+                        <div class="card">
+                            <h3>Realisasi Pemasukan</h3>
+                            <p id="actual-income">Rp 0</p>
                         </div>
-
-                        <div class="sm:col-span-2">
-                            <label for="art-style" class="block text-sm font-medium leading-6 text-slate-900">Gaya Seni</label>
-                            <div class="mt-2">
-                                <select id="art-style" name="art-style" class="block w-full rounded-md border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 transition">
-                                    <option value="">Pilih Gaya</option>
-                                    <option>Fotorealistis</option>
-                                    <option>Seni Digital</option>
-                                    <option>Gaya Anime</option>
-                                    <option>Lukisan Cat Minyak</option>
-                                    <option>Kartun</option>
-                                    <option>Seni Konsep</option>
-                                    <option>Cyberpunk</option>
-                                    <option>Steampunk</option>
-                                </select>
-                            </div>
+                        <div class="card">
+                            <h3>Rencana Pengeluaran</h3>
+                            <p id="planned-expense">Rp 0</p>
                         </div>
-
-                        <div class="sm:col-span-2">
-                            <label for="lighting" class="block text-sm font-medium leading-6 text-slate-900">Pencahayaan</label>
-                            <div class="mt-2">
-                                <select id="lighting" name="lighting" class="block w-full rounded-md border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 transition">
-                                    <option value="">Pilih Cahaya</option>
-                                    <option>Cinematic Lighting</option>
-                                    <option>Golden Hour</option>
-                                    <option>Cahaya Remang</option>
-                                    <option>Lampu Neon</option>
-                                    <option>Cahaya Dramatis</option>
-                                    <option>Soft Light</option>
-                                </select>
-                            </div>
+                        <div class="card">
+                            <h3>Realisasi Pengeluaran</h3>
+                            <p id="actual-expense">Rp 0</p>
                         </div>
-
-                        <div class="sm:col-span-2">
-                            <label for="mood" class="block text-sm font-medium leading-6 text-slate-900">Suasana</label>
-                            <div class="mt-2">
-                                <select id="mood" name="mood" class="block w-full rounded-md border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 transition">
-                                    <option value="">Pilih Suasana</option>
-                                    <option>Misterius</option>
-                                    <option>Ceria</option>
-                                    <option>Melankolis</option>
-                                    <option>Epik</option>
-                                    <option>Tenang</option>
-                                    <option>Mencekam</option>
-                                </select>
+                        <div class="card large">
+                            <h3>Rasio Pengeluaran</h3>
+                            <p class="ratio-text" id="expense-ratio">0%</p>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" id="expense-progress-bar"></div>
                             </div>
+                            <small>Realisasi Pengeluaran / Rencana Pengeluaran</small>
                         </div>
-
-                        <div class="sm:col-span-2">
-                            <label for="camera-angle" class="block text-sm font-medium leading-6 text-slate-900">Sudut Kamera</label>
-                            <div class="mt-2">
-                                <select id="camera-angle" name="camera-angle" class="block w-full rounded-md border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 transition">
-                                    <option value="">Pilih Sudut</option>
-                                    <option>Full Body Shot</option>
-                                    <option>Medium Shot</option>
-                                    <option>Close-up</option>
-                                    <option>Low Angle</option>
-                                    <option>High Angle</option>
-                                    <option>Dutch Angle</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="sm:col-span-2">
-                            <label for="color-palette" class="block text-sm font-medium leading-6 text-slate-900">Palet Warna</label>
-                            <div class="mt-2">
-                                <select id="color-palette" name="color-palette" class="block w-full rounded-md border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 transition">
-                                    <option value="">Pilih Palet</option>
-                                    <option>Monokromatik</option>
-                                    <option>Warna Pastel</option>
-                                    <option>Warna Cerah & Jenuh</option>
-                                    <option>Sepia</option>
-                                    <option>Warna Dingin</option>
-                                    <option>Warna Hangat</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="sm:col-span-2">
-                            <label for="image-quality" class="block text-sm font-medium leading-6 text-slate-900">Kualitas Gambar</label>
-                            <div class="mt-2">
-                                <select id="image-quality" name="image-quality" class="block w-full rounded-md border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 transition">
-                                    <option value="">Pilih Kualitas</option>
-                                    <option>Sangat Detail (Hyperdetailed)</option>
-                                    <option>Resolusi 4K</option>
-                                    <option>Resolusi 8K</option>
-                                    <option>Sharp Focus</option>
-                                    <option>Intricate Details</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="col-span-full">
-                            <label for="additional-details" class="block text-sm font-medium leading-6 text-slate-900">Detail Tambahan (Opsional)</label>
-                            <div class="mt-2">
-                                <textarea id="additional-details" name="additional-details" rows="3" class="block w-full rounded-md border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 transition" placeholder="Contoh: Memakai helm kaca retak, langit dengan dua bulan, ..."></textarea>
-                            </div>
+                         <div class="card large">
+                            <h3>Sisa Uang</h3>
+                            <p class="saldo-text" id="current-balance">Rp 0</p>
+                             <small>Realisasi Pemasukan - Realisasi Pengeluaran</small>
                         </div>
                     </div>
                 </div>
-
-                <!-- ===== BAGIAN 2: PENYESUAIAN WAJAH KARAKTER ===== -->
-                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg border border-slate-200">
-                    <h2 class="text-xl sm:text-2xl font-semibold leading-7 text-slate-900 border-b border-slate-200 pb-4 mb-8">
-                        2. Penyesuaian Wajah Karakter <span class="text-base font-normal text-slate-500">(Jika Ada)</span>
-                    </h2>
-                    <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
-                        <div>
-                            <label for="face-shape" class="block text-sm font-medium leading-6 text-slate-900">Bentuk Wajah</label>
-                            <input type="text" name="face-shape" id="face-shape" placeholder="Oval, bulat, persegi" class="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm transition">
-                        </div>
-                        <div>
-                            <label for="eyes" class="block text-sm font-medium leading-6 text-slate-900">Bentuk & Warna Mata</label>
-                            <input type="text" name="eyes" id="eyes" placeholder="Mata biru sipit" class="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm transition">
-                        </div>
-                        <div>
-                            <label for="nose-shape" class="block text-sm font-medium leading-6 text-slate-900">Bentuk Hidung</label>
-                            <input type="text" name="nose-shape" id="nose-shape" placeholder="Mancung, pesek" class="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm transition">
-                        </div>
-                        <div>
-                            <label for="lip-shape" class="block text-sm font-medium leading-6 text-slate-900">Bentuk Bibir</label>
-                            <input type="text" name="lip-shape" id="lip-shape" placeholder="Tipis, tebal" class="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm transition">
-                        </div>
-                        <div>
-                            <label for="expression" class="block text-sm font-medium leading-6 text-slate-900">Ekspresi</label>
-                            <input type="text" name="expression" id="expression" placeholder="Tersenyum tipis, marah" class="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm transition">
-                        </div>
-                        <div>
-                            <label for="hair-style" class="block text-sm font-medium leading-6 text-slate-900">Gaya Rambut</label>
-                            <input type="text" name="hair-style" id="hair-style" placeholder="Panjang bergelombang, cepak" class="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm transition">
-                        </div>
-                        <div>
-                            <label for="hair-color" class="block text-sm font-medium leading-6 text-slate-900">Warna Rambut</label>
-                            <input type="text" name="hair-color" id="hair-color" placeholder="Pirang, hitam" class="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm transition">
-                        </div>
-                        <div>
-                            <label for="skin-tone" class="block text-sm font-medium leading-6 text-slate-900">Warna Kulit</label>
-                            <input type="text" name="skin-tone" id="skin-tone" placeholder="Sawo matang, putih pucat" class="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm transition">
-                        </div>
-                        <div>
-                            <label for="age" class="block text-sm font-medium leading-6 text-slate-900">Usia</label>
-                            <input type="text" name="age" id="age" placeholder="25 tahun, remaja, lansia" class="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm transition">
-                        </div>
-                         <div>
-                            <label for="gender" class="block text-sm font-medium leading-6 text-slate-900">Gender</label>
-                            <input type="text" name="gender" id="gender" placeholder="Pria, wanita, non-biner" class="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm transition">
-                        </div>
-                        <div class="sm:col-span-2 lg:col-span-2">
-                            <label for="other-features" class="block text-sm font-medium leading-6 text-slate-900">Fitur Khas Lainnya</label>
-                            <input type="text" name="other-features" id="other-features" placeholder="Tato di wajah, bekas luka, tindik" class="mt-2 block w-full rounded-md border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm transition">
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- ===== BAGIAN 3: PROMPT NEGATIF ===== -->
-                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg border border-slate-200">
-                    <h2 class="text-xl sm:text-2xl font-semibold leading-7 text-slate-900 border-b border-slate-200 pb-4 mb-8">
-                        3. Prompt Negatif <span class="text-base font-normal text-slate-500">(Yang Tidak Diinginkan)</span>
-                    </h2>
-                    <div class="col-span-full">
-                        <label for="negative-prompt" class="block text-sm font-medium leading-6 text-slate-900">Deskripsikan elemen yang tidak diinginkan dalam gambar</label>
-                        <div class="mt-2">
-                            <textarea id="negative-prompt" name="negative-prompt" rows="4" class="block w-full rounded-md border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 transition" placeholder="Contoh: Tangan cacat, jari lebih dari lima, teks, watermark, gambar buram, jelek, ..."></textarea>
-                        </div>
-                    </div>
-                </div>
-
             </div>
 
-            <!-- ===== TOMBOL AKSI ===== -->
-            <div class="mt-10 flex items-center justify-end gap-x-4">
-                <button type="reset" class="text-sm font-semibold leading-6 text-slate-900 bg-slate-200 hover:bg-slate-300 rounded-md py-2 px-4 transition-colors duration-200">
-                    Bersihkan Semua Input
-                </button>
-                <button type="submit" class="rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-colors duration-200">
-                    Hasilkan Prompt
-                </button>
+            <div id="planning-view" class="view">
+                <div class="window-header">
+                    <div class="window-controls"><span class="control close"></span><span class="control minimize"></span><span class="control maximize"></span></div>
+                    <div class="window-title">Perencanaan Bulanan</div>
+                </div>
+                <div class="window-body planning-layout">
+                    <div class="planning-section">
+                        <h3>Rencana Pemasukan</h3>
+                        <form id="plan-income-form">
+                            <input type="text" placeholder="Nama Pemasukan (e.g., Gaji)" required>
+                            <input type="number" placeholder="Jumlah" required>
+                            <button type="submit">Tambah</button>
+                        </form>
+                        <ul id="plan-income-list"></ul>
+                    </div>
+                    <div class="planning-section">
+                        <h3>Rencana Pengeluaran</h3>
+                        <form id="plan-expense-form">
+                            <input type="text" placeholder="Nama Pengeluaran (e.g., Sewa)" required>
+                            <input type="number" placeholder="Jumlah" required>
+                            <button type="submit">Tambah</button>
+                        </form>
+                        <ul id="plan-expense-list"></ul>
+                    </div>
+                </div>
             </div>
-        </form>
 
+            <div id="realization-view" class="view">
+                <div class="window-header">
+                     <div class="window-controls"><span class="control close"></span><span class="control minimize"></span><span class="control maximize"></span></div>
+                    <div class="window-title">Catat Transaksi</div>
+                </div>
+                <div class="window-body">
+                    <h3>Input Transaksi Baru</h3>
+                    <form id="transaction-form">
+                        <select id="transaction-type" required>
+                            <option value="income">Pemasukan</option>
+                            <option value="expense">Pengeluaran</option>
+                        </select>
+                        <select id="transaction-category" required></select>
+                        <input type="text" id="transaction-description" placeholder="Deskripsi Singkat" required>
+                        <input type="number" id="transaction-amount" placeholder="Jumlah" required>
+                        <button type="submit">Simpan Transaksi</button>
+                    </form>
+                    <hr>
+                    <h3>Riwayat Transaksi</h3>
+                    <div class="table-container">
+                        <table id="transaction-table">
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>Jenis</th>
+                                    <th>Kategori</th>
+                                    <th>Deskripsi</th>
+                                    <th>Jumlah</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="settings-view" class="view">
+                 <div class="window-header">
+                     <div class="window-controls"><span class="control close"></span><span class="control minimize"></span><span class="control maximize"></span></div>
+                    <div class="window-title">Pengaturan Kategori Transaksi</div>
+                </div>
+                <div class="window-body planning-layout">
+                    <div class="planning-section">
+                        <h3>Kategori Pemasukan</h3>
+                        <form id="income-category-form">
+                            <input type="text" placeholder="Nama Kategori Baru" required>
+                            <button type="submit">Tambah</button>
+                        </form>
+                        <ul id="income-category-list"></ul>
+                    </div>
+                    <div class="planning-section">
+                        <h3>Kategori Pengeluaran</h3>
+                        <form id="expense-category-form">
+                            <input type="text" placeholder="Nama Kategori Baru" required>
+                            <button type="submit">Tambah</button>
+                        </form>
+                        <ul id="expense-category-list"></ul>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <nav class="dock">
+            <div class="dock-item" data-view="dashboard-view" title="Dashboard">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Dashboard</span>
+            </div>
+            <div class="dock-item" data-view="planning-view" title="Perencanaan">
+                <i class="fa-solid fa-calendar-days"></i>
+                <span>Perencanaan</span>
+            </div>
+            <div class="dock-item" data-view="realization-view" title="Realisasi">
+                <i class="fa-solid fa-money-bill-transfer"></i>
+                <span>Realisasi</span>
+            </div>
+            <div class="dock-item" data-view="settings-view" title="Pengaturan">
+                <i class="fa-solid fa-gears"></i>
+                <span>Pengaturan</span>
+            </div>
+        </nav>
     </div>
 
+    <script src="script.js"></script>
 </body>
 </html>
