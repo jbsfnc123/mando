@@ -1,182 +1,171 @@
-/* Import font dari Google Fonts dan reset dasar */
-:root {
-    --primary-color: #3f51b5;
-    --primary-light: #e8eaf6;
-    --text-dark: #333;
-    --text-light: #ffffff;
-    --bg-light: #f0f2f5;
-    --bg-white: #ffffff;
-    --border-color: #e0e0e0;
-}
+document.addEventListener("DOMContentLoaded", () => {
+    
+    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCJulpWQwI2qu1Lji-iLvxSJkdHMpMBUwAQl7i4KIt34eV-_MrZTl_JgueGhiwopPodWP-NzO1b3Dj/pub?output=csv';
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
+    const tableHead = document.querySelector("#invoice-table thead");
+    const tableBody = document.querySelector("#invoice-table tbody");
+    const filterContainer = document.querySelector("#filter-container");
 
-body {
-    font-family: 'Roboto', sans-serif;
-    background-color: var(--bg-light);
-    color: var(--text-dark);
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    min-height: 100vh;
-    padding: 20px;
-}
-
-.container {
-    width: 100%;
-    max-width: 1100px;
-    background-color: var(--bg-white);
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    padding: 30px;
-    overflow: hidden;
-}
-
-h1 {
-    text-align: center;
-    color: #1a237e;
-    margin-bottom: 25px;
-    font-weight: 700;
-}
-
-/* Styling untuk Filter Dropdown */
-#filter-container {
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-#filter-container label {
-    font-weight: 500;
-}
-
-#location-filter {
-    padding: 8px 12px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 15px;
-    background-color: var(--bg-white);
-    cursor: pointer;
-}
-
-.table-wrapper {
-    overflow-x: auto; /* Agar tabel bisa di-scroll horizontal jika perlu */
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-thead th {
-    background-color: var(--primary-color);
-    color: var(--text-light);
-    padding: 15px;
-    text-align: left;
-    font-weight: 500;
-    font-size: 16px;
-    text-transform: capitalize;
-    white-space: nowrap;
-}
-
-tbody tr {
-    border-bottom: 1px solid var(--border-color);
-    transition: background-color 0.2s ease;
-}
-
-tbody tr:nth-child(even) {
-    background-color: #f8f9fa;
-}
-
-tbody tr:hover {
-    background-color: var(--primary-light);
-}
-
-td {
-    padding: 15px;
-    font-size: 15px;
-    vertical-align: middle;
-}
-
-/* Styling untuk input tanggal di dalam tabel */
-td input[type="date"] {
-    width: 100%;
-    min-width: 150px;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-family: 'Roboto', sans-serif;
-    font-size: 15px;
-}
-
-.loading {
-    text-align: center;
-    padding: 40px;
-    color: #777;
-    font-style: italic;
-}
-
-/* --- TAMPILAN RESPONSIVE UNTUK LAYAR KECIL (MOBILE) --- */
-@media (max-width: 768px) {
-    .container {
-        padding: 15px;
+    /**
+     * Mengubah format tanggal dari DD/MM/YYYY ke YYYY-MM-DD agar valid untuk input type="date"
+     * @param {string} dateString - Tanggal dalam format DD/MM/YYYY
+     * @returns {string} Tanggal dalam format YYYY-MM-DD atau string kosong jika tidak valid
+     */
+    function formatDateForInput(dateString) {
+        if (!dateString || dateString.length < 8) return '';
+        try {
+            const parts = dateString.split('/');
+            if (parts.length !== 3) return '';
+            const day = parts[0].padStart(2, '0');
+            const month = parts[1].padStart(2, '0');
+            const year = parts[2];
+            return `${year}-${month}-${day}`;
+        } catch (error) {
+            console.error("Gagal memformat tanggal:", dateString, error);
+            return '';
+        }
     }
     
-    h1 {
-        font-size: 1.5rem;
+    /**
+     * Mem-parse teks CSV menjadi array of objects
+     * @param {string} csvText - Teks mentah dari file CSV
+     * @returns {Array<Object>}
+     */
+    function parseCSV(csvText) {
+        const lines = csvText.trim().split('\n');
+        const headers = lines.shift().split(',').map(header => header.trim().replace(/"/g, ''));
+        
+        return lines.map(line => {
+            const values = line.split(',').map(value => value.trim().replace(/"/g, ''));
+            const entry = {};
+            headers.forEach((header, index) => {
+                entry[header] = values[index] || '';
+            });
+            return entry;
+        });
     }
 
-    /* Sembunyikan header tabel */
-    thead {
-        display: none;
+    /**
+     * Menampilkan data ke dalam tabel HTML
+     * @param {Array<Object>} data - Data tagihan
+     * @param {Array<string>} headers - Nama-nama kolom
+     */
+    function renderTable(data, headers) {
+        // Kosongkan header dan body tabel terlebih dahulu
+        tableHead.innerHTML = "";
+        tableBody.innerHTML = "";
+
+        // Buat header tabel
+        const headerRow = document.createElement('tr');
+        headers.forEach(key => {
+            const th = document.createElement('th');
+            th.textContent = key.replace(/_/g, ' ');
+            headerRow.appendChild(th);
+        });
+        tableHead.appendChild(headerRow);
+
+        // Jika tidak ada data, tampilkan pesan
+        if (data.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="${headers.length}" class="loading">Tidak ada data untuk ditampilkan.</td></tr>`;
+            return;
+        }
+
+        // Isi setiap baris tabel dengan data
+        data.forEach(item => {
+            const row = document.createElement('tr');
+            headers.forEach(key => {
+                const td = document.createElement('td');
+                // Atribut data-label ini PENTING untuk tampilan responsif di mobile
+                td.setAttribute('data-label', key.replace(/_/g, ' '));
+
+                if (key.toLowerCase() === 'tanda terima') {
+                    const dateInput = document.createElement('input');
+                    dateInput.type = 'date';
+                    dateInput.value = formatDateForInput(item[key]);
+                    td.appendChild(dateInput);
+                } else {
+                    td.textContent = item[key];
+                }
+                row.appendChild(td);
+            });
+            tableBody.appendChild(row);
+        });
     }
 
-    /* Ubah baris menjadi blok seperti kartu */
-    tr {
-        display: block;
-        margin-bottom: 15px;
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        background-color: var(--bg-white);
+    /**
+     * Membuat dan mengelola filter dropdown
+     * @param {Array<Object>} data - Seluruh data tagihan
+     * @param {Array<string>} headers - Nama-nama kolom
+     */
+    function setupFilters(data, headers) {
+        filterContainer.innerHTML = '';
+        const locationIndex = headers.findIndex(header => header.toLowerCase() === 'lokasi');
+        
+        if (locationIndex !== -1) {
+            const label = document.createElement('label');
+            label.htmlFor = 'location-filter';
+            label.textContent = 'Filter Lokasi:';
+
+            const select = document.createElement('select');
+            select.id = 'location-filter';
+
+            const options = ['Semua Lokasi', 'kantor', 'toko', 'sales', 'kolektor'];
+            options.forEach(optionValue => {
+                const option = document.createElement('option');
+                option.value = optionValue === 'Semua Lokasi' ? '' : optionValue.toLowerCase();
+                option.textContent = optionValue.charAt(0).toUpperCase() + optionValue.slice(1);
+                select.appendChild(option);
+            });
+
+            filterContainer.appendChild(label);
+            filterContainer.appendChild(select);
+
+            select.addEventListener('change', (e) => {
+                const selectedValue = e.target.value;
+                const rows = tableBody.querySelectorAll('tr');
+
+                rows.forEach(row => {
+                    if (selectedValue === '') {
+                        row.style.display = '';
+                    } else {
+                        // Cari textContent dari sel lokasi di setiap baris
+                        const cell = row.querySelector(`td[data-label="lokasi"]`);
+                        if (cell && cell.textContent.toLowerCase() === selectedValue) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    }
+                });
+            });
+        }
     }
     
-    tbody tr:nth-child(even) {
-        background-color: var(--bg-white); /* Hapus zebra stripe di mode kartu */
+    /**
+     * Fungsi utama untuk memuat, mem-parse, dan menampilkan data
+     */
+    async function main() {
+        try {
+            const response = await fetch(csvUrl);
+            if (!response.ok) throw new Error(`Gagal mengambil data: Status ${response.status}`);
+            
+            const csvText = await response.text();
+            const data = parseCSV(csvText);
+            
+            if (data.length > 0) {
+                const headers = Object.keys(data[0]);
+                renderTable(data, headers);
+                setupFilters(data, headers);
+            } else {
+                renderTable([], []);
+            }
+
+        } catch (error) {
+            console.error("Terjadi kesalahan:", error);
+            tableBody.innerHTML = `<tr><td colspan="5" class="loading">Gagal memuat data. Silakan periksa konsol (F12) untuk detail.</td></tr>`;
+        }
     }
 
-    /* Ubah sel menjadi blok penuh */
-    td {
-        display: block;
-        text-align: right; /* Nilai di kanan */
-        padding-left: 50%; /* Beri ruang untuk label */
-        position: relative;
-        border-bottom: 1px dotted var(--border-color);
-    }
-    
-    td:last-child {
-        border-bottom: none;
-    }
-
-    /* Buat label dari atribut data-label */
-    td::before {
-        content: attr(data-label);
-        position: absolute;
-        left: 15px;
-        width: 45%; /* Lebar label */
-        padding-right: 10px;
-        text-align: left; /* Label di kiri */
-        font-weight: 500;
-        text-transform: capitalize;
-    }
-    
-    td input[type="date"] {
-        width: auto;
-        max-width: 100%;
-    }
-}
+    // Panggil fungsi utama untuk memulai proses
+    main();
+});
