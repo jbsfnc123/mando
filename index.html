@@ -9,6 +9,20 @@
 </head>
 <body>
 
+    <div id="donation-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close">&times;</button>
+            <h2>Dukung Pengembang</h2>
+            <p>Jika aplikasi ini bermanfaat, Anda dapat memberikan dukungan melalui donasi. Terima kasih banyak!</p>
+            <div class="donation-info">
+                <p><strong>Bank:</strong> BCA</p>
+                <p><strong>No. Rekening:</strong> 8681353429</p>
+                <p><strong>Atas Nama:</strong> Dearmando A Manalu</p>
+            </div>
+        </div>
+    </div>
+
+
     <div id="notification-container"></div>
 
     <div class="app-container">
@@ -31,7 +45,7 @@
                     <hr class="section-divider">
                     <div id="category-ratios-container">
                         <h3 class="section-title">Rincian Rasio Pengeluaran</h3>
-                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -70,17 +84,18 @@
                 <div class="window-body">
                     <h3>Input Transaksi Baru</h3>
                     <form id="transaction-form">
-                        <select id="transaction-type" required>
-                            <option value="income">Pemasukan</option>
-                            <option value="expense">Pengeluaran</option>
-                        </select>
+                        <select id="transaction-type" required><option value="income">Pemasukan</option><option value="expense">Pengeluaran</option></select>
                         <select id="transaction-category" required></select>
                         <input type="text" id="transaction-description" placeholder="Deskripsi Singkat" required>
                         <input type="number" id="transaction-amount" placeholder="Jumlah" required>
+                        <input type="date" id="transaction-date" required>
                         <button type="submit">Simpan Transaksi</button>
                     </form>
                     <hr>
-                    <h3>Riwayat Transaksi</h3>
+                    <div class="table-header">
+                        <h3>Riwayat Transaksi</h3>
+                        <button id="export-btn"><i class="fa-solid fa-file-excel"></i> Export ke Excel (CSV)</button>
+                    </div>
                     <div class="table-container">
                         <table id="transaction-table">
                             <thead><tr><th>Tanggal</th><th>Jenis</th><th>Kategori</th><th>Deskripsi</th><th>Jumlah</th><th>Aksi</th></tr></thead>
@@ -91,26 +106,28 @@
             </div>
             
             <div id="settings-view" class="view">
-                 <div class="window-header">
+                <div class="window-header">
                      <div class="window-controls"><span class="control close"></span><span class="control minimize"></span><span class="control maximize"></span></div>
-                    <div class="window-title">Pengaturan Kategori Transaksi</div>
+                    <div class="window-title">Pengaturan</div>
                 </div>
-                <div class="window-body planning-layout">
-                    <div class="planning-section">
-                        <h3>Kategori Pemasukan</h3>
-                        <form id="income-category-form">
-                            <input type="text" placeholder="Nama Kategori Baru" required>
-                            <button type="submit">Tambah</button>
-                        </form>
-                        <ul id="income-category-list"></ul>
+                <div class="window-body">
+                    <div class="planning-layout">
+                        <div class="planning-section">
+                            <h3>Kategori Pemasukan</h3>
+                            <form id="income-category-form"><input type="text" placeholder="Nama Kategori Baru" required><button type="submit">Tambah</button></form>
+                            <ul id="income-category-list"></ul>
+                        </div>
+                        <div class="planning-section">
+                            <h3>Kategori Pengeluaran</h3>
+                            <form id="expense-category-form"><input type="text" placeholder="Nama Kategori Baru" required><button type="submit">Tambah</button></form>
+                            <ul id="expense-category-list"></ul>
+                        </div>
                     </div>
-                    <div class="planning-section">
-                        <h3>Kategori Pengeluaran</h3>
-                        <form id="expense-category-form">
-                            <input type="text" placeholder="Nama Kategori Baru" required>
-                            <button type="submit">Tambah</button>
-                        </form>
-                        <ul id="expense-category-list"></ul>
+                    <hr class="section-divider">
+                    <div class="danger-zone">
+                        <h3>Zona Berbahaya</h3>
+                        <p>Tindakan ini tidak bisa dibatalkan. Ini akan menghapus semua data perencanaan dan transaksi Anda.</p>
+                        <button id="clear-data-btn" class="danger-btn"><i class="fa-solid fa-trash-can"></i> Bersihkan Semua Data</button>
                     </div>
                 </div>
             </div>
@@ -122,6 +139,7 @@
             <div class="dock-item" data-view="planning-view" title="Perencanaan"><i class="fa-solid fa-calendar-days"></i><span>Perencanaan</span></div>
             <div class="dock-item" data-view="realization-view" title="Realisasi"><i class="fa-solid fa-money-bill-transfer"></i><span>Realisasi</span></div>
             <div class="dock-item" data-view="settings-view" title="Pengaturan"><i class="fa-solid fa-gears"></i><span>Pengaturan</span></div>
+            <div class="dock-item" id="donate-btn" title="Donasi"><i class="fa-solid fa-heart"></i><span>Donasi</span></div>
         </nav>
     </div>
 
