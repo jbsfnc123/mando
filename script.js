@@ -1,36 +1,54 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // === ELEMEN DOM ===
-    // Kontainer & Navigasi
+    // === 1. ELEMEN DOM ===
     const views = document.querySelectorAll('.view');
     const dockItems = document.querySelectorAll('.dock-item');
     const notificationContainer = document.getElementById('notification-container');
     
-    // Fitur Baru
+    // Dashboard
+    const dashboardElements = {
+        plannedIncome: document.getElementById('planned-income'),
+        actualIncome: document.getElementById('actual-income'),
+        plannedExpense: document.getElementById('planned-expense'),
+        actualExpense: document.getElementById('actual-expense'),
+        currentBalance: document.getElementById('current-balance'),
+        expenseRatio: document.getElementById('expense-ratio'),
+        expenseProgressBar: document.getElementById('expense-progress-bar'),
+        categoryRatiosContainer: document.getElementById('category-ratios-container')
+    };
+
+    // Perencanaan
+    const planIncomeForm = document.getElementById('plan-income-form');
+    const planExpenseForm = document.getElementById('plan-expense-form');
+    const planIncomeList = document.getElementById('plan-income-list');
+    const planExpenseList = document.getElementById('plan-expense-list');
+
+    // Realisasi
+    const transactionForm = document.getElementById('transaction-form');
+    const transactionDateInput = document.getElementById('transaction-date');
+    const transactionTableBody = document.querySelector('#transaction-table tbody');
+    const transactionTypeSelect = document.getElementById('transaction-type');
+    
+    // Pengaturan
+    const incomeCategoryForm = document.getElementById('income-category-form');
+    const expenseCategoryForm = document.getElementById('expense-category-form');
+    const incomeCategoryList = document.getElementById('income-category-list');
+    const expenseCategoryList = document.getElementById('expense-category-list');
+
+    // Fitur Tambahan
     const exportBtn = document.getElementById('export-btn');
     const clearDataBtn = document.getElementById('clear-data-btn');
     const donateBtn = document.getElementById('donate-btn');
     const donationModal = document.getElementById('donation-modal');
     const modalCloseBtn = donationModal.querySelector('.modal-close');
-    
-    // Form & List
-    const planIncomeForm = document.getElementById('plan-income-form');
-    const planExpenseForm = document.getElementById('plan-expense-form');
-    const planIncomeList = document.getElementById('plan-income-list');
-    const planExpenseList = document.getElementById('plan-expense-list');
-    const transactionForm = document.getElementById('transaction-form');
-    const transactionDateInput = document.getElementById('transaction-date');
-    const transactionTableBody = document.querySelector('#transaction-table tbody');
-    const incomeCategoryForm = document.getElementById('income-category-form');
-    const expenseCategoryForm = document.getElementById('expense-category-form');
 
-    // === STATE MANAGEMENT ===
+    // === 2. STATE MANAGEMENT ===
     const getInitialState = () => ({
         plannedIncomes: {},
         plannedExpenses: {},
         transactions: [],
         categories: {
-            income: ['Gaji', 'Bonus', 'Lain-lain'],
-            expense: ['Makanan', 'Transportasi', 'Tagihan', 'Hiburan', 'Belanja', 'Lain-lain']
+            income: ['Gaji', 'Bonus', 'Hasil Usaha', 'Lain-lain'],
+            expense: ['Makanan', 'Transportasi', 'Tagihan', 'Hiburan', 'Belanja', 'Kesehatan', 'Lain-lain']
         }
     });
 
@@ -41,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('financialState', JSON.stringify(state));
     };
 
-    // === FUNGSI HELPERS ===
+    // === 3. FUNGSI HELPERS ===
     const formatCurrency = (amount) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
 
     const showNotification = (message, type = 'warning') => {
@@ -51,21 +69,25 @@ document.addEventListener('DOMContentLoaded', () => {
         notification.innerHTML = `<i class="${iconClass}"></i><p>${message}</p>`;
         notificationContainer.appendChild(notification);
         setTimeout(() => notification.classList.add('show'), 10);
-        setTimeout(() => notification.classList.remove('show'), 5000);
-        setTimeout(() => notification.remove(), 5500);
+        setTimeout(() => { notification.classList.remove('show'); setTimeout(() => notification.remove(), 500); }, 5000);
     };
-
+    
     const populateDropdown = (selectElement, categories) => {
         selectElement.innerHTML = '';
         categories.forEach(cat => {
-            const option = document.createElement('option');
-            option.value = cat;
-            option.textContent = cat;
-            selectElement.appendChild(option);
+            selectElement.innerHTML += `<option value="${cat}">${cat}</option>`;
         });
     };
+    
+    // === 4. FUNGSI RENDER UTAMA ===
+    const renderAll = () => {
+        renderDashboard();
+        renderPlanning();
+        renderTransactions();
+        renderCategories();
+        saveData();
+    };
 
-    // === FUNGSI RENDER (yang dipanggil oleh renderAll) ===
     const renderDashboard = () => {
         const totalPlannedIncome = Object.values(state.plannedIncomes).reduce((s, a) => s + a, 0);
         const totalPlannedExpense = Object.values(state.plannedExpenses).reduce((s, a) => s + a, 0);
@@ -73,20 +95,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalActualExpense = state.transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
         const expenseRatio = totalPlannedExpense > 0 ? (totalActualExpense / totalPlannedExpense) * 100 : 0;
         
-        document.getElementById('planned-income').textContent = formatCurrency(totalPlannedIncome);
-        document.getElementById('actual-income').textContent = formatCurrency(totalActualIncome);
-        document.getElementById('planned-expense').textContent = formatCurrency(totalPlannedExpense);
-        document.getElementById('actual-expense').textContent = formatCurrency(totalActualExpense);
-        document.getElementById('current-balance').textContent = formatCurrency(totalActualIncome - totalActualExpense);
-        document.getElementById('expense-ratio').textContent = `${expenseRatio.toFixed(1)}%`;
-        const progressBar = document.getElementById('expense-progress-bar');
-        progressBar.style.width = `${Math.min(expenseRatio, 100)}%`;
-        progressBar.style.backgroundColor = expenseRatio > 100 ? 'var(--red-color)' : expenseRatio > 80 ? 'var(--orange-color)' : 'var(--green-color)';
+        dashboardElements.plannedIncome.textContent = formatCurrency(totalPlannedIncome);
+        dashboardElements.actualIncome.textContent = formatCurrency(totalActualIncome);
+        dashboardElements.plannedExpense.textContent = formatCurrency(totalPlannedExpense);
+        dashboardElements.actualExpense.textContent = formatCurrency(totalActualExpense);
+        dashboardElements.currentBalance.textContent = formatCurrency(totalActualIncome - totalActualExpense);
+        dashboardElements.expenseRatio.textContent = `${expenseRatio.toFixed(1)}%`;
+        dashboardElements.expenseProgressBar.style.width = `${Math.min(expenseRatio, 100)}%`;
+        dashboardElements.expenseProgressBar.style.backgroundColor = expenseRatio > 100 ? 'var(--red-color)' : expenseRatio > 80 ? 'var(--orange-color)' : 'var(--green-color)';
 
-        const categoryContainer = document.getElementById('category-ratios-container');
-        categoryContainer.innerHTML = '<h3 class="section-title">Rincian Rasio Pengeluaran</h3>';
+        const container = dashboardElements.categoryRatiosContainer;
+        container.innerHTML = '<h3 class="section-title">Rincian Rasio Pengeluaran</h3>';
         if (Object.keys(state.plannedExpenses).length === 0) {
-            categoryContainer.innerHTML += '<p style="color: var(--text-secondary);">Belum ada rencana pengeluaran.</p>';
+            container.innerHTML += '<p style="color: var(--text-secondary);">Belum ada rencana pengeluaran.</p>';
             return;
         }
         for (const category in state.plannedExpenses) {
@@ -97,35 +118,33 @@ document.addEventListener('DOMContentLoaded', () => {
             item.className = 'category-ratio-item';
             const ratioColor = ratio > 100 ? 'var(--red-color)' : ratio > 80 ? 'var(--orange-color)' : 'var(--text-primary)';
             item.innerHTML = `<div class="header"><span class="name">${category}</span><span class="ratio" style="color: ${ratioColor}">${ratio.toFixed(1)}%</span></div><div class="progress-bar-container"><div class="progress-bar" style="width: ${Math.min(ratio, 100)}%; background-color: ${ratioColor};"></div></div><div class="footer">${formatCurrency(actual)} / ${formatCurrency(planned)}</div>`;
-            categoryContainer.appendChild(item);
+            container.appendChild(item);
             if (ratio >= 80 && !notifiedCategories.has(category)) {
                 showNotification(`Pengeluaran <b>${category}</b> sudah mencapai ${ratio.toFixed(0)}% dari rencana!`);
                 notifiedCategories.add(category);
             }
         }
     };
-    
+
     const renderPlanning = () => {
-        const renderList = (listEl, plans) => {
+        const renderList = (listEl, plans, type) => {
             listEl.innerHTML = '';
             for (const category in plans) {
-                listEl.innerHTML += `<li><span>${category} - ${formatCurrency(plans[category])}</span><button data-category="${category}" data-type="${listEl === planIncomeList ? 'income' : 'expense'}">&times;</button></li>`;
+                listEl.innerHTML += `<li><span>${category} - ${formatCurrency(plans[category])}</span><button data-category="${category}" data-type="${type}">&times;</button></li>`;
             }
         };
-        renderList(planIncomeList, state.plannedIncomes);
-        renderList(planExpenseList, state.plannedExpenses);
+        renderList(planIncomeList, state.plannedIncomes, 'income');
+        renderList(planExpenseList, state.plannedExpenses, 'expense');
     };
 
     const renderTransactions = () => {
         transactionTableBody.innerHTML = '';
         [...state.transactions].slice().reverse().forEach((t, index) => {
             const originalIndex = state.transactions.length - 1 - index;
-            const row = document.createElement('tr');
-            row.innerHTML = `<td>${new Date(t.date).toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric'})}</td><td class="${t.type}-text">${t.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</td><td>${t.category}</td><td>${t.description}</td><td>${formatCurrency(t.amount)}</td><td><button data-index="${originalIndex}">&times;</button></td>`;
-            transactionTableBody.appendChild(row);
+            transactionTableBody.innerHTML += `<tr><td>${new Date(t.date).toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric'})}</td><td class="${t.type}-text">${t.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</td><td>${t.category}</td><td>${t.description}</td><td>${formatCurrency(t.amount)}</td><td><button data-index="${originalIndex}">&times;</button></td></tr>`;
         });
     };
-
+    
     const renderCategories = () => {
         const renderCatList = (listEl, categories, type) => {
             listEl.innerHTML = '';
@@ -133,34 +152,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 listEl.innerHTML += `<li><span>${cat}</span><button data-index="${index}" data-type="${type}">&times;</button></li>`;
             });
         };
-        renderCatList(document.getElementById('income-category-list'), state.categories.income, 'income');
-        renderCatList(document.getElementById('expense-category-list'), state.categories.expense, 'expense');
+        renderCatList(incomeCategoryList, state.categories.income, 'income');
+        renderCatList(expenseCategoryList, state.categories.expense, 'expense');
         
         populateDropdown(document.getElementById('plan-income-category'), state.categories.income);
         populateDropdown(document.getElementById('plan-expense-category'), state.categories.expense);
-        populateDropdown(document.getElementById('transaction-category'), state.categories[document.getElementById('transaction-type').value]);
+        populateDropdown(document.getElementById('transaction-category'), state.categories[transactionTypeSelect.value]);
     };
-
-    // === FUNGSI UTAMA RENDER ALL ===
-    const renderAll = () => {
-        saveData();
-        renderDashboard();
-        renderPlanning();
-        renderTransactions();
-        renderCategories();
-    };
-
-    // === EVENT LISTENERS ===
-    // Navigasi Dock
+    
+    // === 5. EVENT LISTENERS ===
+    
+    // Navigasi & Modal
     dockItems.forEach(item => {
         item.addEventListener('click', () => {
-            if (item.id === 'donate-btn') return; // Ditangani oleh listener donasi
+            if (item.id === 'donate-btn') return;
             views.forEach(v => v.classList.remove('active'));
             document.getElementById(item.getAttribute('data-view')).classList.add('active');
         });
     });
-
-    // Modal Donasi
     donateBtn.addEventListener('click', () => donationModal.classList.add('show'));
     modalCloseBtn.addEventListener('click', () => donationModal.classList.remove('show'));
     donationModal.addEventListener('click', (e) => { if (e.target === donationModal) donationModal.classList.remove('show'); });
@@ -182,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         let csvContent = "data:text/csv;charset=utf-8,Tanggal,Jenis,Kategori,Deskripsi,Jumlah\r\n";
         state.transactions.forEach(t => {
-            const row = [ new Date(t.date).toLocaleDateString('id-ID'), t.type, t.category, `"${t.description}"`, t.amount ];
+            const row = [ new Date(t.date).toLocaleDateString('id-ID'), t.type, t.category, `"${t.description.replace(/"/g, '""')}"`, t.amount ];
             csvContent += row.join(",") + "\r\n";
         });
         const link = document.createElement("a");
@@ -192,41 +201,53 @@ document.addEventListener('DOMContentLoaded', () => {
         link.click();
         document.body.removeChild(link);
     });
+
+    // PERBAIKAN FINAL: Event listener untuk form perencanaan
+    planIncomeForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const category = e.target.querySelector('select').value;
+        const amountInput = e.target.querySelector('input[type="number"]');
+        const amount = parseFloat(amountInput.value);
+        if (category && amount > 0) {
+            state.plannedIncomes[category] = amount;
+            amountInput.value = '';
+            renderAll();
+        }
+    });
     
-    // Form-form
-    const handlePlanFormSubmit = (form, planType) => {
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const category = e.target.querySelector('select').value;
-            const amountInput = e.target.querySelector('input[type="number"]');
-            const amount = parseFloat(amountInput.value);
-            if (category && amount > 0) {
-                state[planType][category] = amount;
-                amountInput.value = '';
-                renderAll();
-            }
-        });
-    };
-    handlePlanFormSubmit(planIncomeForm, 'plannedIncomes');
-    handlePlanFormSubmit(planExpenseForm, 'plannedExpenses');
+    planExpenseForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const category = e.target.querySelector('select').value;
+        const amountInput = e.target.querySelector('input[type="number"]');
+        const amount = parseFloat(amountInput.value);
+        if (category && amount > 0) {
+            state.plannedExpenses[category] = amount;
+            amountInput.value = '';
+            renderAll();
+        }
+    });
     
+    // Form & Aksi lainnya
     transactionForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const dateValue = transactionDateInput.value;
         const newTransaction = { 
             id: Date.now(), 
-            date: dateValue ? new Date(dateValue).toISOString() : new Date().toISOString(), 
-            type: document.getElementById('transaction-type').value, 
+            date: transactionDateInput.value ? new Date(transactionDateInput.value).toISOString() : new Date().toISOString(), 
+            type: transactionTypeSelect.value, 
             category: document.getElementById('transaction-category').value, 
             description: document.getElementById('transaction-description').value, 
             amount: parseFloat(document.getElementById('transaction-amount').value),
         };
+        if (!newTransaction.category) {
+            showNotification("Kategori tidak boleh kosong.");
+            return;
+        }
         state.transactions.push(newTransaction);
         e.target.reset();
         transactionDateInput.valueAsDate = new Date();
         renderAll();
     });
-
+    
     const handleCategoryFormSubmit = (form, catType) => {
         form.addEventListener('submit', e => {
             e.preventDefault();
@@ -242,13 +263,11 @@ document.addEventListener('DOMContentLoaded', () => {
     handleCategoryFormSubmit(incomeCategoryForm, 'income');
     handleCategoryFormSubmit(expenseCategoryForm, 'expense');
 
-    // Event Delegation untuk Hapus Item
     document.getElementById('planning-view').addEventListener('click', e => {
         if (e.target.tagName === 'BUTTON') {
-            const type = e.target.dataset.type === 'income' ? 'plannedIncomes' : 'plannedExpenses';
-            const category = e.target.dataset.category;
-            delete state[type][category];
-            if (type === 'plannedExpenses') notifiedCategories.delete(category);
+            const typeKey = e.target.dataset.type === 'income' ? 'plannedIncomes' : 'plannedExpenses';
+            delete state[typeKey][e.target.dataset.category];
+            if (typeKey === 'plannedExpenses') notifiedCategories.delete(e.target.dataset.category);
             renderAll();
         }
     });
@@ -267,10 +286,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    document.getElementById('transaction-type').addEventListener('change', renderCategories);
+    transactionTypeSelect.addEventListener('change', renderCategories);
 
-
-    // === INISIALISASI APLIKASI ===
+    // === 6. INISIALISASI ===
     const initializeApp = () => {
         transactionDateInput.valueAsDate = new Date();
         renderAll();
