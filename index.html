@@ -5,29 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>KeuanganKu - Supabase</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
         
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .card-gradient { background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); }
-        .savings-gradient { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .tab-active { color: #4f46e5; }
         .tab-inactive { color: #9ca3af; }
         
-        /* Loading Spinner */
+        .card-gradient { background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); }
+        .savings-gradient { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+
+        .progress-bar { transition: width 0.5s ease-in-out; }
+        
+        /* Loader untuk Login */
         .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #4f46e5; width: 18px; height: 18px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden bg-gray-50">
 
-    <!-- === VIEW: LOGIN === -->
+    <!-- === VIEW: LOGIN (DIGANTI DARI PIN KE USERNAME/PASS) === -->
     <div id="view-login" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-6">
         <div class="w-full max-w-sm">
             <div class="mb-8 text-center">
@@ -35,7 +49,7 @@
                     <i class="fas fa-wallet"></i>
                 </div>
                 <h2 class="text-2xl font-bold text-gray-800">KeuanganKu</h2>
-                <p class="text-sm text-gray-500">Login Database (Supabase)</p>
+                <p class="text-sm text-gray-500">Login Database Online</p>
             </div>
 
             <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
@@ -57,20 +71,17 @@
                     </button>
                 </form>
             </div>
-
-            <div class="mt-4 text-center">
-                <button onclick="clearSession()" class="text-xs text-gray-400 underline">Reset Sesi Lokal</button>
-            </div>
             
             <div id="setup-warning" class="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-800 hidden">
-                <strong>Setup Supabase Diperlukan!</strong><br>
-                Edit file ini dan masukkan <code>SUPABASE_URL</code> dan <code>SUPABASE_KEY</code> di bagian script paling bawah.
+                <strong>Setup Diperlukan!</strong><br>
+                Masukkan URL & Key Supabase di bagian script paling bawah.
             </div>
         </div>
     </div>
 
-    <!-- === VIEW: APP CONTAINER === -->
+    <!-- === SECTION: MAIN APP (UI ASLI DIPERTAHANKAN) === -->
     <div id="app-container" class="hidden h-screen flex flex-col">
+        
         <!-- Header -->
         <header class="bg-indigo-600 text-white p-4 shadow-md z-10 flex justify-between items-center">
             <h1 class="text-xl font-bold"><i class="fas fa-wallet mr-2"></i>KeuanganKu</h1>
@@ -87,19 +98,24 @@
         <!-- Main Content -->
         <main id="mainContent" class="flex-1 overflow-y-auto p-4 pb-24 no-scrollbar">
             
-            <!-- DASHBOARD -->
+            <!-- DASHBOARD VIEW -->
             <div id="view-dashboard" class="fade-in">
-                <div class="card-gradient rounded-2xl shadow-lg p-5 mb-4 text-white relative overflow-hidden">
-                    <div class="flex justify-between">
-                        <p class="text-indigo-100 text-xs font-medium uppercase tracking-wider mb-1">Saldo Aktif</p>
-                        <div id="sync-indicator" class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full flex items-center">
-                            <i class="fas fa-circle text-green-400 text-[6px] mr-1"></i> Online
-                        </div>
+                
+                <div class="flex justify-between items-center mb-2">
+                     <p class="text-xs text-gray-500">Halo, <span id="display-username" class="font-bold text-indigo-600">User</span>!</p>
+                     <div id="sync-indicator" class="text-[10px] bg-white border px-2 py-0.5 rounded-full flex items-center">
+                        <i class="fas fa-circle text-gray-300 text-[6px] mr-1"></i> Offline
                     </div>
+                </div>
+
+                <!-- Main Balance Card -->
+                <div class="card-gradient rounded-2xl shadow-lg p-5 mb-4 text-white relative overflow-hidden">
+                    <p class="text-indigo-100 text-xs font-medium uppercase tracking-wider mb-1">Saldo Aktif (Dompet & Bank)</p>
                     <h2 id="display-total-balance" class="text-3xl font-bold">Rp 0</h2>
                     <div id="breakdown-regular" class="mt-4 pt-3 border-t border-white/20 text-xs space-y-1 text-indigo-100"></div>
                 </div>
 
+                <!-- Savings Card -->
                 <div class="savings-gradient rounded-2xl shadow-lg p-5 mb-6 text-white relative overflow-hidden">
                     <div class="flex justify-between items-start">
                         <div>
@@ -111,39 +127,187 @@
                     <div id="breakdown-savings" class="mt-4 pt-3 border-t border-white/20 text-xs space-y-1 text-yellow-100"></div>
                 </div>
 
-                <!-- Admin Banner -->
-                <div id="admin-banner" class="hidden bg-purple-100 border border-purple-200 p-3 rounded-lg mb-6 flex justify-between items-center cursor-pointer" onclick="switchTab('admin')">
-                    <div class="flex items-center text-purple-800">
-                        <i class="fas fa-user-shield mr-2"></i>
-                        <div>
-                            <h4 class="font-bold text-sm">Mode Admin</h4>
-                            <p class="text-xs">Kelola Pengguna Aplikasi</p>
-                        </div>
+                <!-- Empty State -->
+                <div id="dashboard-empty-alert" class="hidden bg-blue-50 border border-blue-100 p-4 rounded-xl mb-6 flex items-start">
+                    <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+                    <div>
+                        <h4 class="font-bold text-blue-800 text-sm">Selamat Datang!</h4>
+                        <p class="text-xs text-blue-600 mt-1">Data masih kosong. Silakan ke menu <b>Data</b> untuk menambah Rekening & Kategori.</p>
                     </div>
-                    <i class="fas fa-chevron-right text-purple-400"></i>
                 </div>
 
-                <div id="dashboard-empty-alert" class="hidden bg-blue-50 border border-blue-100 p-4 rounded-xl mb-6">
-                    <h4 class="font-bold text-blue-800 text-sm"><i class="fas fa-info-circle mr-1"></i> Data Kosong</h4>
-                    <p class="text-xs text-blue-600 mt-1">Silakan ke menu <b>Data</b> untuk setup awal.</p>
-                </div>
-
+                <!-- Recent Transactions -->
                 <div>
                     <h3 class="font-bold text-gray-700 mb-3 flex justify-between items-center">
-                        Transaksi Hari Ini <span onclick="openMutation()" class="text-xs text-indigo-600 font-normal cursor-pointer">Lihat Semua</span>
+                        Transaksi Hari Ini
+                        <span onclick="openMutation()" class="text-xs text-indigo-600 font-normal cursor-pointer">Lihat Semua</span>
                     </h3>
                     <div id="recent-transactions-list" class="space-y-3 pb-4"></div>
                 </div>
             </div>
 
-            <!-- ADMIN PANEL (Hanya Admin) -->
-            <div id="view-admin" class="hidden fade-in space-y-6 pb-20">
+            <!-- MUTATION VIEW -->
+            <div id="view-mutation" class="hidden fade-in pb-20">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-gray-800">Kelola Pengguna</h2>
-                    <button onclick="switchTab('dashboard')" class="text-sm text-indigo-600 bg-indigo-50 px-3 py-1 rounded">Tutup</button>
+                    <h2 class="text-xl font-bold text-gray-800">Mutasi Transaksi</h2>
+                    <button onclick="switchTab('dashboard')" class="text-sm text-indigo-600 font-semibold bg-indigo-50 px-3 py-1 rounded-lg">Tutup</button>
                 </div>
 
-                <!-- Create User -->
+                <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100">
+                    <h3 class="font-bold text-gray-700 text-xs uppercase mb-3">Filter Mutasi</h3>
+                    <div class="flex flex-col gap-3">
+                        <select id="mut-filter-period" onchange="toggleMutFilterMode()" class="p-2 border rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-indigo-500">
+                            <option value="thisMonth">Bulan Ini</option>
+                            <option value="lastMonth">Bulan Lalu</option>
+                            <option value="custom">Pilih Tanggal Manual</option>
+                        </select>
+                        <div id="mut-filter-custom" class="hidden grid grid-cols-2 gap-2">
+                            <input type="date" id="mut-start-date" onchange="renderMutation()" class="p-2 border rounded-lg text-sm">
+                            <input type="date" id="mut-end-date" onchange="renderMutation()" class="p-2 border rounded-lg text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="mutation-list" class="space-y-3"></div>
+                <div id="mutation-empty" class="hidden text-center text-gray-400 text-sm py-10">Tidak ada transaksi pada periode ini.</div>
+            </div>
+
+            <!-- ADD TRANSACTION VIEW -->
+            <div id="view-add" class="hidden fade-in">
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h2 id="form-title" class="text-xl font-bold text-gray-800 mb-4 text-center">Catat Transaksi</h2>
+                    <form id="transactionForm" onsubmit="handleTransactionSubmit(event)">
+                        <input type="hidden" id="edit-id" value="">
+                        <div class="flex bg-gray-100 rounded-lg p-1 mb-6">
+                            <button type="button" onclick="setTxType('income')" id="btn-type-income" class="flex-1 py-2 text-xs font-bold rounded transition-all text-gray-500">Masuk</button>
+                            <button type="button" onclick="setTxType('expense')" id="btn-type-expense" class="flex-1 py-2 text-xs font-bold rounded transition-all text-gray-500">Keluar</button>
+                            <button type="button" onclick="setTxType('transfer')" id="btn-type-transfer" class="flex-1 py-2 text-xs font-bold rounded transition-all text-gray-500">Pindah</button>
+                        </div>
+                        <input type="hidden" id="input-type" value="expense">
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Jumlah (Rp)</label>
+                            <input type="number" id="input-amount" required min="1" class="w-full text-2xl font-bold p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="0">
+                        </div>
+                        <div id="group-category" class="mb-4">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Kategori</label>
+                            <select id="input-category" class="w-full p-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></select>
+                            <p id="hint-no-cat" class="hidden text-xs text-red-500 mt-1">Kategori kosong.</p>
+                        </div>
+                        <div class="mb-4">
+                            <label id="label-account-source" class="block text-xs font-bold text-gray-500 uppercase mb-1">Dari Rekening</label>
+                            <select id="input-account" required class="w-full p-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></select>
+                            <p id="hint-no-acc" class="hidden text-xs text-red-500 mt-1">Rekening kosong.</p>
+                        </div>
+                        <div id="group-destination" class="hidden mb-4">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Ke Rekening (Tujuan)</label>
+                            <select id="input-account-dest" class="w-full p-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></select>
+                        </div>
+                        <div class="mb-4"><input type="date" id="input-date" required class="w-full p-3 border border-gray-300 rounded-lg"></div>
+                        <div class="mb-6"><input type="text" id="input-note" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Opsional"></div>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="cancelEdit()" id="btn-cancel" class="hidden w-1/3 bg-gray-200 text-gray-700 font-bold py-3 rounded-lg">Batal</button>
+                            <button type="submit" id="btn-save" class="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-lg shadow-lg hover:bg-indigo-700 disabled:opacity-50">Simpan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- SUMMARY VIEW -->
+            <div id="view-summary" class="hidden fade-in pb-20">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">Rekapan Keuangan</h2>
+                    <button onclick="switchTab('dashboard')" class="text-sm text-indigo-600 font-semibold bg-indigo-50 px-3 py-1 rounded-lg">Tutup</button>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100">
+                    <h3 class="font-bold text-gray-700 text-xs uppercase mb-3">Filter Periode</h3>
+                    <div class="flex flex-col gap-3">
+                        <select id="filter-period-select" onchange="toggleFilterMode()" class="p-2 border rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-indigo-500">
+                            <option value="thisMonth">Bulan Ini</option>
+                            <option value="lastMonth">Bulan Lalu</option>
+                            <option value="custom">Pilih Tanggal Manual</option>
+                        </select>
+                        <div id="filter-custom-date" class="hidden grid grid-cols-2 gap-2">
+                            <input type="date" id="filter-start-date" onchange="renderSummary()" class="p-2 border rounded-lg text-sm">
+                            <input type="date" id="filter-end-date" onchange="renderSummary()" class="p-2 border rounded-lg text-sm">
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm mb-4">
+                    <h3 class="font-bold text-gray-700 text-sm mb-3 border-b pb-2">Posisi Saldo</h3>
+                    <div id="summary-accounts-list" class="space-y-2 text-sm"></div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm mb-4">
+                    <h3 class="font-bold text-gray-700 text-sm mb-4">Sumber Pemasukan</h3>
+                    <div id="summary-income-list" class="space-y-4"></div>
+                    <div id="summary-income-empty" class="hidden text-center text-gray-400 text-sm py-2 italic">Tidak ada pemasukan.</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm mb-4">
+                    <h3 class="font-bold text-gray-700 text-sm mb-4">Analisa Pengeluaran</h3>
+                    <div id="summary-expense-list" class="space-y-4"></div>
+                    <div id="summary-expense-empty" class="hidden text-center text-gray-400 text-sm py-2 italic">Tidak ada pengeluaran.</div>
+                </div>
+            </div>
+
+            <!-- DATA / SETTINGS VIEW -->
+            <div id="view-data" class="hidden fade-in space-y-6">
+                <!-- Manage Accounts -->
+                <div class="bg-white rounded-xl shadow-md p-5 border-l-4 border-indigo-500">
+                    <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">Rekening / Dompet</h3>
+                    <form onsubmit="handleAddAccount(event)" class="mb-4">
+                        <div class="flex gap-2 mb-2">
+                            <input type="text" id="new-account-name" required placeholder="Nama" class="flex-1 p-2 border rounded text-sm">
+                            <input type="number" id="new-account-balance" required placeholder="Saldo Awal" class="w-24 p-2 border rounded text-sm">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="flex items-center space-x-2 text-sm text-gray-600">
+                                <input type="checkbox" id="new-account-is-savings" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                <span>Set sbg Tabungan?</span>
+                            </label>
+                            <button type="submit" class="bg-indigo-600 text-white px-4 py-1.5 rounded text-sm font-semibold">Tambah</button>
+                        </div>
+                    </form>
+                    <ul id="settings-account-list" class="space-y-2 text-sm"></ul>
+                </div>
+
+                <!-- Manage Categories -->
+                <div class="bg-white rounded-xl shadow-md p-5 border-l-4 border-gray-500">
+                    <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">Kategori Transaksi</h3>
+                    <form onsubmit="handleAddCategory(event)" class="mb-4 flex gap-2">
+                        <select id="new-cat-type" class="p-2 border rounded text-sm bg-gray-50">
+                            <option value="income">Masuk</option>
+                            <option value="expense">Keluar</option>
+                        </select>
+                        <input type="text" id="new-cat-name" required placeholder="Nama Kategori" class="flex-1 p-2 border rounded text-sm">
+                        <button type="submit" class="bg-gray-800 text-white px-3 rounded"><i class="fas fa-plus"></i></button>
+                    </form>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <h4 class="text-xs font-bold text-emerald-600 mb-2">Pemasukan</h4>
+                            <ul id="settings-cat-income-list" class="space-y-1"></ul>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold text-rose-600 mb-2">Pengeluaran</h4>
+                            <ul id="settings-cat-expense-list" class="space-y-1"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Action Button (Only Visible to Admin) -->
+                <div id="admin-actions" class="hidden text-center pt-2">
+                     <button onclick="switchTab('admin')" class="bg-purple-600 text-white text-sm font-bold px-4 py-2 rounded shadow"><i class="fas fa-user-shield mr-2"></i>Admin Panel</button>
+                </div>
+
+                <div class="text-center pt-4 border-t mt-4">
+                     <button onclick="handleLogout()" class="text-red-500 text-sm font-bold border border-red-200 px-4 py-2 rounded bg-white hover:bg-red-50 w-full"><i class="fas fa-sign-out-alt mr-2"></i>Keluar</button>
+                </div>
+            </div>
+
+            <!-- ADMIN PANEL VIEW (HIDDEN) -->
+            <div id="view-admin" class="hidden fade-in space-y-6 pb-20">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">Admin Panel</h2>
+                    <button onclick="switchTab('data')" class="text-sm text-indigo-600 bg-indigo-50 px-3 py-1 rounded">Kembali</button>
+                </div>
                 <div class="bg-white rounded-xl shadow p-5">
                     <h3 class="font-bold text-gray-700 text-sm mb-3">Buat Akun Baru</h3>
                     <form onsubmit="handleCreateUser(event)" class="space-y-3">
@@ -158,169 +322,37 @@
                         <button type="submit" class="w-full bg-purple-600 text-white py-2 rounded text-sm font-bold">Buat Akun</button>
                     </form>
                 </div>
-
-                <!-- User List -->
                 <div class="bg-white rounded-xl shadow p-5">
                     <h3 class="font-bold text-gray-700 text-sm mb-3">Daftar Pengguna</h3>
-                    <div id="admin-user-list" class="space-y-2">
-                        <!-- User list injected here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- MUTATION VIEW -->
-            <div id="view-mutation" class="hidden fade-in pb-20">
-                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-gray-800">Mutasi</h2>
-                    <button onclick="switchTab('dashboard')" class="text-sm text-indigo-600 bg-indigo-50 px-3 py-1 rounded">Tutup</button>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100">
-                    <div class="flex flex-col gap-3">
-                        <select id="mut-filter-period" onchange="toggleMutFilterMode()" class="p-2 border rounded-lg text-sm bg-gray-50">
-                            <option value="thisMonth">Bulan Ini</option>
-                            <option value="lastMonth">Bulan Lalu</option>
-                            <option value="custom">Pilih Tanggal</option>
-                        </select>
-                        <div id="mut-filter-custom" class="hidden grid grid-cols-2 gap-2">
-                            <input type="date" id="mut-start-date" onchange="renderMutation()" class="p-2 border rounded-lg text-sm">
-                            <input type="date" id="mut-end-date" onchange="renderMutation()" class="p-2 border rounded-lg text-sm">
-                        </div>
-                    </div>
-                </div>
-                <div id="mutation-list" class="space-y-3"></div>
-                <div id="mutation-empty" class="hidden text-center text-gray-400 text-sm py-10">Tidak ada data transaksi.</div>
-            </div>
-
-            <!-- SUMMARY VIEW -->
-            <div id="view-summary" class="hidden fade-in pb-20">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-gray-800">Rekapan</h2>
-                    <button onclick="switchTab('dashboard')" class="text-sm text-indigo-600 bg-indigo-50 px-3 py-1 rounded">Tutup</button>
-                </div>
-                
-                <!-- Filter for Summary -->
-                <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100">
-                    <h3 class="font-bold text-gray-700 text-xs uppercase mb-3">Filter Periode</h3>
-                    <div class="flex flex-col gap-3">
-                        <select id="filter-period-select" onchange="toggleFilterMode()" class="p-2 border rounded-lg text-sm bg-gray-50">
-                            <option value="thisMonth">Bulan Ini</option>
-                            <option value="lastMonth">Bulan Lalu</option>
-                            <option value="custom">Pilih Tanggal</option>
-                        </select>
-                        <div id="filter-custom-date" class="hidden grid grid-cols-2 gap-2">
-                            <input type="date" id="filter-start-date" onchange="renderSummary()" class="p-2 border rounded-lg text-sm">
-                            <input type="date" id="filter-end-date" onchange="renderSummary()" class="p-2 border rounded-lg text-sm">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white p-4 rounded-xl shadow-sm mb-4">
-                    <h3 class="font-bold text-gray-700 text-sm mb-3">Posisi Saldo</h3>
-                    <div id="summary-accounts-list" class="space-y-2 text-sm"></div>
-                </div>
-                
-                <!-- Income Analysis -->
-                <div class="bg-white p-4 rounded-xl shadow-sm mb-4">
-                    <h3 class="font-bold text-gray-700 text-sm mb-4">Sumber Pemasukan</h3>
-                    <div id="summary-income-list" class="space-y-4"></div>
-                    <div id="summary-income-empty" class="hidden text-center text-gray-400 text-sm py-2 italic">Tidak ada pemasukan.</div>
-                </div>
-
-                <!-- Expense Analysis -->
-                <div class="bg-white p-4 rounded-xl shadow-sm mb-4">
-                    <h3 class="font-bold text-gray-700 text-sm mb-4">Analisa Pengeluaran</h3>
-                    <div id="summary-expense-list" class="space-y-4"></div>
-                    <div id="summary-expense-empty" class="hidden text-center text-gray-400 text-sm py-2 italic">Tidak ada pengeluaran.</div>
-                </div>
-            </div>
-
-            <!-- ADD VIEW -->
-            <div id="view-add" class="hidden fade-in">
-                <div class="bg-white rounded-xl shadow-md p-6">
-                    <h2 id="form-title" class="text-xl font-bold text-gray-800 mb-4 text-center">Catat Transaksi</h2>
-                    <form id="transactionForm" onsubmit="handleTransactionSubmit(event)">
-                        <input type="hidden" id="edit-id" value="">
-                        <div class="flex bg-gray-100 rounded-lg p-1 mb-6">
-                            <button type="button" onclick="setTxType('income')" id="btn-type-income" class="flex-1 py-2 text-xs font-bold rounded transition-all text-gray-500">Masuk</button>
-                            <button type="button" onclick="setTxType('expense')" id="btn-type-expense" class="flex-1 py-2 text-xs font-bold rounded transition-all text-gray-500">Keluar</button>
-                            <button type="button" onclick="setTxType('transfer')" id="btn-type-transfer" class="flex-1 py-2 text-xs font-bold rounded transition-all text-gray-500">Pindah</button>
-                        </div>
-                        <input type="hidden" id="input-type" value="expense">
-                        <div class="mb-4">
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Jumlah</label>
-                            <input type="number" id="input-amount" required min="1" class="w-full text-2xl font-bold p-3 border border-gray-300 rounded-lg" placeholder="0">
-                        </div>
-                        <div id="group-category" class="mb-4">
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Kategori</label>
-                            <select id="input-category" class="w-full p-3 bg-white border border-gray-300 rounded-lg"></select>
-                        </div>
-                        <div class="mb-4">
-                            <label id="label-account-source" class="block text-xs font-bold text-gray-500 uppercase mb-1">Dari Rekening</label>
-                            <select id="input-account" required class="w-full p-3 bg-white border border-gray-300 rounded-lg"></select>
-                        </div>
-                        <div id="group-destination" class="hidden mb-4">
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Ke Rekening</label>
-                            <select id="input-account-dest" class="w-full p-3 bg-white border border-gray-300 rounded-lg"></select>
-                        </div>
-                        <div class="mb-4"><input type="date" id="input-date" required class="w-full p-3 border border-gray-300 rounded-lg"></div>
-                        <div class="mb-6"><input type="text" id="input-note" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Catatan"></div>
-                        <div class="flex gap-2">
-                            <button type="button" onclick="cancelEdit()" id="btn-cancel" class="hidden w-1/3 bg-gray-200 text-gray-700 font-bold py-3 rounded-lg">Batal</button>
-                            <button type="submit" id="btn-save" class="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-lg shadow-lg">Simpan</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <div id="view-data" class="hidden fade-in space-y-6 pb-20">
-                <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm">
-                    <div>
-                        <span id="user-display-name" class="block text-sm font-bold text-gray-800">Username</span>
-                        <span id="user-display-role" class="block text-xs text-gray-500 bg-gray-100 px-2 rounded inline-block">Role</span>
-                    </div>
-                    <button onclick="handleLogout()" class="text-xs text-red-500 font-bold border border-red-200 px-3 py-1 rounded bg-red-50">Keluar</button>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-md p-5 border-l-4 border-indigo-500">
-                    <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">Rekening</h3>
-                    <form onsubmit="handleAddAccount(event)" class="mb-4 flex gap-2">
-                        <input type="text" id="new-account-name" required placeholder="Nama" class="flex-1 p-2 border rounded text-sm">
-                        <input type="number" id="new-account-balance" required placeholder="Saldo" class="w-20 p-2 border rounded text-sm">
-                        <label class="flex items-center space-x-1 text-xs"><input type="checkbox" id="new-account-is-savings"><span>Tabungan?</span></label>
-                        <button type="submit" class="bg-indigo-600 text-white px-3 rounded"><i class="fas fa-plus"></i></button>
-                    </form>
-                    <ul id="settings-account-list" class="space-y-2 text-sm"></ul>
-                </div>
-                
-                <div class="bg-white rounded-xl shadow-md p-5 border-l-4 border-gray-500">
-                    <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">Kategori</h3>
-                    <form onsubmit="handleAddCategory(event)" class="mb-4 flex gap-2">
-                        <select id="new-cat-type" class="p-2 border rounded text-sm bg-gray-50"><option value="income">In</option><option value="expense">Out</option></select>
-                        <input type="text" id="new-cat-name" required placeholder="Nama" class="flex-1 p-2 border rounded text-sm">
-                        <button type="submit" class="bg-gray-800 text-white px-3 rounded"><i class="fas fa-plus"></i></button>
-                    </form>
-                    <div class="grid grid-cols-2 gap-2 text-sm">
-                        <ul id="settings-cat-income-list" class="space-y-1"></ul>
-                        <ul id="settings-cat-expense-list" class="space-y-1"></ul>
-                    </div>
+                    <div id="admin-user-list" class="space-y-2"></div>
                 </div>
             </div>
         </main>
 
-        <!-- Nav -->
+        <!-- Navbar -->
         <nav class="bg-white border-t border-gray-200 fixed bottom-0 w-full z-20 pb-safe">
             <div class="flex justify-around items-center h-16">
-                <button onclick="switchTab('dashboard')" class="flex flex-col items-center w-full justify-center group"><i id="nav-icon-dashboard" class="fas fa-home text-xl mb-1 tab-active"></i><span class="text-xs font-medium tab-active">Beranda</span></button>
-                <button onclick="prepareAdd()" class="flex flex-col items-center w-full justify-center -mt-6"><div class="w-14 h-14 bg-indigo-600 rounded-full shadow-lg flex items-center justify-center text-white border-4 border-gray-100 active:scale-95 transition-transform"><i class="fas fa-plus text-2xl"></i></div></button>
-                <button onclick="switchTab('data')" class="flex flex-col items-center w-full justify-center group"><i id="nav-icon-data" class="fas fa-database text-xl mb-1 tab-inactive"></i><span class="text-xs font-medium tab-inactive">Data</span></button>
+                <button onclick="switchTab('dashboard')" class="flex flex-col items-center w-full justify-center group">
+                    <i id="nav-icon-dashboard" class="fas fa-home text-xl mb-1 tab-active"></i>
+                    <span id="nav-text-dashboard" class="text-xs font-medium tab-active">Beranda</span>
+                </button>
+                <button onclick="prepareAdd()" class="flex flex-col items-center w-full justify-center -mt-6">
+                    <div class="w-14 h-14 bg-indigo-600 rounded-full shadow-lg flex items-center justify-center text-white border-4 border-gray-100 active:scale-95 transition-transform">
+                        <i class="fas fa-plus text-2xl"></i>
+                    </div>
+                </button>
+                <button onclick="switchTab('data')" class="flex flex-col items-center w-full justify-center group">
+                    <i id="nav-icon-data" class="fas fa-database text-xl mb-1 tab-inactive"></i>
+                    <span id="nav-text-data" class="text-xs font-medium tab-inactive">Data</span>
+                </button>
             </div>
         </nav>
     </div>
 
-    <!-- Modals -->
+    <!-- ACTION MODAL -->
     <div id="modal-action" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center fade-in">
         <div class="bg-white rounded-xl p-6 w-4/5 max-w-sm shadow-2xl">
-            <h3 class="text-lg font-bold text-gray-800 mb-2">Opsi</h3>
+            <h3 class="text-lg font-bold text-gray-800 mb-2">Opsi Transaksi</h3>
             <div class="flex flex-col gap-3 mt-4">
                 <button onclick="editSelectedTransaction()" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold">Edit</button>
                 <button onclick="deleteSelectedTransaction()" class="w-full bg-white border border-red-500 text-red-500 py-3 rounded-lg font-bold">Hapus</button>
@@ -335,7 +367,7 @@
 
     <script>
         // --- KONFIGURASI SUPABASE ---
-        // Masukkan URL dan Key dari Dashboard Supabase Anda
+        // Ganti dengan URL dan Key dari Project Supabase Anda
         var SUPABASE_URL = 'https://iqgptgsjbkcnydgsftys.supabase.co';
         var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxZ3B0Z3NqYmtjbnlkZ3NmdHlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzMjQzMTcsImV4cCI6MjA4NDkwMDMxN30.ldj4lzCqQ7hBgkqTkwGK4KsxqEITHeq9SZOrQ1p01Ek';
         // ----------------------------
@@ -357,7 +389,7 @@
             }
         }
 
-        // --- AUTH & DB LOGIC ---
+        // --- AUTH & DB LOGIC (SUPABASE) ---
 
         async function handleLogin(e) {
             e.preventDefault();
@@ -372,6 +404,7 @@
             errBox.classList.add('hidden');
 
             try {
+                // Cek Tabel Users
                 const { data, error } = await supabaseClient
                     .from('users')
                     .select('id, username, role')
@@ -379,7 +412,7 @@
                     .eq('password', p)
                     .single();
 
-                if (error || !data) throw new Error("Username atau password salah");
+                if (error || !data) throw new Error("Username atau Password salah");
 
                 currentUser = data;
                 localStorage.setItem('keuanganku_user', JSON.stringify(currentUser));
@@ -396,14 +429,13 @@
             document.getElementById('view-login').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
             
-            document.getElementById('user-display-name').textContent = currentUser.username;
-            document.getElementById('user-display-role').textContent = currentUser.role;
+            // Set User Info
+            document.getElementById('display-username').textContent = currentUser.username;
 
+            // Show Admin Panel Button if Admin
             if(currentUser.role === 'admin') {
-                document.getElementById('admin-banner').classList.remove('hidden');
+                document.getElementById('admin-actions').classList.remove('hidden');
                 loadAdminUserList();
-            } else {
-                document.getElementById('admin-banner').classList.add('hidden');
             }
 
             await loadData();
@@ -411,21 +443,16 @@
 
         function handleLogout() {
             if(confirm("Keluar dari aplikasi?")) {
-                clearSession();
+                localStorage.removeItem('keuanganku_user');
+                location.reload();
             }
         }
-        
-        function clearSession() {
-            localStorage.removeItem('keuanganku_user');
-            location.reload();
-        }
 
-        // --- DATA CRUD ---
+        // --- DATABASE OPERATIONS ---
 
         async function loadData() {
-            if (!currentUser) return;
             const sync = document.getElementById('sync-indicator');
-            if(sync) sync.innerHTML = '<i class="fas fa-sync fa-spin mr-1"></i> Loading...';
+            if(sync) { sync.innerHTML = '<i class="fas fa-sync fa-spin text-indigo-500 text-[6px] mr-1"></i> Sync...'; sync.classList.add('text-indigo-600'); }
 
             const { data, error } = await supabaseClient
                 .from('users')
@@ -435,6 +462,7 @@
 
             if (data && data.data) {
                 appData = data.data;
+                // Init defaults if empty
                 if(!appData.accounts) appData.accounts = [];
                 if(!appData.categories) appData.categories = [];
                 if(!appData.transactions) appData.transactions = [];
@@ -442,17 +470,13 @@
             
             renderAll();
             initDateFilters();
-            if(sync) sync.innerHTML = '<i class="fas fa-circle text-green-400 text-[6px] mr-1"></i> Online';
+            
+            if(sync) { sync.innerHTML = '<i class="fas fa-circle text-green-500 text-[6px] mr-1"></i> Online'; sync.classList.remove('text-indigo-600'); }
         }
 
         async function saveData() {
-            if (!currentUser) {
-                showToast("Sesi habis, silakan login ulang");
-                return;
-            }
-
             const sync = document.getElementById('sync-indicator');
-            if(sync) sync.innerHTML = '<i class="fas fa-sync fa-spin mr-1"></i> Saving...';
+            if(sync) { sync.innerHTML = '<i class="fas fa-sync fa-spin text-indigo-500 text-[6px] mr-1"></i> Saving...'; }
 
             const { error } = await supabaseClient
                 .from('users')
@@ -460,24 +484,16 @@
                 .eq('id', currentUser.id);
 
             if(error) {
-                console.error("Save Error:", error);
-                let msg = error.message;
-                if(msg.includes("violates row-level security policy")) {
-                    msg = "Gagal Simpan: Izin Ditolak";
-                }
-                showToast(msg);
+                showToast("Gagal simpan ke cloud!");
                 if(sync) sync.innerHTML = '<i class="fas fa-exclamation-circle text-red-500 text-[6px] mr-1"></i> Error';
-            }
-            else if(sync) {
-                sync.innerHTML = '<i class="fas fa-circle text-green-400 text-[6px] mr-1"></i> Online';
+            } else {
+                if(sync) sync.innerHTML = '<i class="fas fa-circle text-green-500 text-[6px] mr-1"></i> Online';
             }
         }
 
         // --- ADMIN FUNCTIONS ---
         async function handleCreateUser(e) {
             e.preventDefault();
-            if(currentUser.role !== 'admin') return;
-
             const u = document.getElementById('new-user-name').value;
             const r = document.getElementById('new-user-role').value;
             const p = document.getElementById('new-user-pass').value;
@@ -487,59 +503,62 @@
                 .from('users')
                 .insert({ username: u, password: p, role: r, data: emptyData });
 
-            if(error) {
-                alert("Gagal: " + error.message);
-            } else {
-                alert("User berhasil dibuat!");
-                e.target.reset();
-                loadAdminUserList();
-            }
+            if(error) alert("Gagal: " + error.message);
+            else { alert("User dibuat!"); e.target.reset(); loadAdminUserList(); }
         }
 
         async function loadAdminUserList() {
             const list = document.getElementById('admin-user-list');
-            list.innerHTML = '<p class="text-xs text-gray-500">Memuat...</p>';
-
-            const { data, error } = await supabaseClient
-                .from('users')
-                .select('id, username, role')
-                .order('id', { ascending: true });
-
+            list.innerHTML = 'Loading...';
+            const { data } = await supabaseClient.from('users').select('id, username, role').order('id');
             list.innerHTML = '';
             if(data) {
                 data.forEach(u => {
-                    const isMe = u.id === currentUser.id;
-                    const btnDelete = isMe ? '' : `<button onclick="deleteUser(${u.id})" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>`;
-                    list.innerHTML += `<div class="flex justify-between items-center bg-gray-50 p-2 rounded text-sm border border-gray-100"><div><span class="font-bold text-gray-700">${u.username}</span><span class="text-xs bg-gray-200 px-1 rounded ml-2 text-gray-500">${u.role}</span></div>${btnDelete}</div>`;
+                    const btn = u.id === currentUser.id ? '' : `<button onclick="deleteUser(${u.id})" class="text-red-500 ml-2"><i class="fas fa-trash"></i></button>`;
+                    list.innerHTML += `<div class="flex justify-between p-2 bg-gray-50 border rounded text-sm"><span><b>${u.username}</b> (${u.role})</span>${btn}</div>`;
                 });
             }
         }
 
         window.deleteUser = async (id) => {
-            if(confirm("Hapus user ini permanen?")) {
-                const { error } = await supabaseClient.from('users').delete().eq('id', id);
-                if(error) alert("Gagal hapus: " + error.message);
-                else loadAdminUserList();
+            if(confirm("Hapus user ini?")) {
+                await supabaseClient.from('users').delete().eq('id', id);
+                loadAdminUserList();
             }
         }
 
-        // --- UI & LOGIC HELPERS ---
+        // --- APP LOGIC (ASLI DARI VERSI LOKAL, DATE FIX APPLIED) ---
 
-        function renderAll() { renderDashboard(); renderSettings(); renderSummary(); }
+        function renderAll() {
+            renderDashboard();
+            renderSettings();
+            renderSummary(); 
+            // Also refresh form options
+            if(!document.getElementById('view-add').classList.contains('hidden')) populateOptions();
+        }
 
         function renderDashboard() {
             let reg = 0, sav = 0;
-            appData.accounts.forEach(a => a.isSavings ? sav += a.balance : reg += a.balance);
+            appData.accounts.forEach(a => {
+                if(a.isSavings) sav += a.balance;
+                else reg += a.balance;
+            });
+
             document.getElementById('display-total-balance').textContent = formatRp(reg);
             document.getElementById('display-total-savings').textContent = formatRp(sav);
 
-            // Accounts Breakdown
+            // Breakdown Regular
             const bdReg = document.getElementById('breakdown-regular');
+            bdReg.innerHTML = '';
+            appData.accounts.filter(a => !a.isSavings).forEach(a => {
+                bdReg.innerHTML += `<div class="flex justify-between"><span>${a.name}</span><span>${formatRp(a.balance)}</span></div>`;
+            });
+
+            // Breakdown Savings
             const bdSav = document.getElementById('breakdown-savings');
-            bdReg.innerHTML = ''; bdSav.innerHTML = '';
-            appData.accounts.forEach(a => {
-                const html = `<div class="flex justify-between"><span>${a.name}</span><span>${formatRp(a.balance)}</span></div>`;
-                a.isSavings ? bdSav.innerHTML += html : bdReg.innerHTML += html;
+            bdSav.innerHTML = '';
+            appData.accounts.filter(a => a.isSavings).forEach(a => {
+                bdSav.innerHTML += `<div class="flex justify-between"><span>${a.name}</span><span>${formatRp(a.balance)}</span></div>`;
             });
 
             // Recent Tx
@@ -547,186 +566,92 @@
             list.innerHTML = '';
             const today = formatDate(new Date());
             const todayTx = appData.transactions.filter(t => t.date === today);
+
+            if(appData.accounts.length === 0) {
+                document.getElementById('dashboard-empty-alert').classList.remove('hidden');
+            } else {
+                document.getElementById('dashboard-empty-alert').classList.add('hidden');
+            }
+
+            if(todayTx.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-400 text-xs py-4">Belum ada transaksi hari ini.</p>';
+            } else {
+                renderTxList(todayTx, list);
+            }
+        }
+
+        function renderTxList(txs, el) {
+            el.innerHTML = '';
+            // Sort by date desc (newest first)
+            txs.sort((a,b) => new Date(b.date) - new Date(a.date));
             
-            document.getElementById('dashboard-empty-alert').classList.toggle('hidden', appData.accounts.length > 0);
-            
-            if(!todayTx.length) list.innerHTML = '<p class="text-center text-gray-400 text-xs py-2">Belum ada transaksi hari ini</p>';
-            else renderTxList(todayTx, list);
+            txs.forEach(t => {
+                // Safe find category/account
+                const cat = appData.categories.find(c => c.id == t.categoryId) || { name: t.type === 'transfer' ? 'Transfer' : 'Tanpa Kategori' };
+                const acc = appData.accounts.find(a => a.id == t.accountId) || { name: '?' };
+                
+                let colorClass = 'text-gray-800';
+                let sign = '';
+                let borderClass = 'border-l-4 border-gray-300';
+
+                if(t.type === 'income') {
+                    colorClass = 'text-emerald-600';
+                    sign = '+';
+                    borderClass = 'border-l-4 border-emerald-500';
+                } else if(t.type === 'expense') {
+                    colorClass = 'text-rose-600';
+                    sign = '-';
+                    borderClass = 'border-l-4 border-rose-500';
+                } else {
+                    colorClass = 'text-blue-600';
+                    borderClass = 'border-l-4 border-blue-500';
+                }
+
+                el.innerHTML += `
+                    <div onclick="openActionModal(${t.id})" class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition ${borderClass}">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-bold text-gray-800">${cat.name}</span>
+                            <span class="text-xs text-gray-500">${acc.name} • ${t.date}</span>
+                            ${t.note ? `<span class="text-[10px] text-gray-400 italic">"${t.note}"</span>` : ''}
+                        </div>
+                        <div class="text-right">
+                            <span class="font-bold ${colorClass}">${sign} ${formatRp(t.amount)}</span>
+                        </div>
+                    </div>
+                `;
+            });
         }
 
         function renderSettings() {
+            // Account List
             const accList = document.getElementById('settings-account-list');
             accList.innerHTML = '';
-            appData.accounts.forEach(a => accList.innerHTML += `<li class="flex justify-between bg-gray-50 p-2 rounded"><span>${a.name} ${a.isSavings?'<i class="fas fa-star text-yellow-500 text-xs"></i>':''}</span><span class="font-mono">${formatRp(a.balance)}</span></li>`);
-
-            const catListIn = document.getElementById('settings-cat-income-list');
-            const catListOut = document.getElementById('settings-cat-expense-list');
-            catListIn.innerHTML = ''; catListOut.innerHTML = '';
-            appData.categories.forEach(c => {
-                const html = `<li class="bg-gray-50 p-2 rounded border-l-4 ${c.type==='income'?'border-emerald-500':'border-rose-500'}">${c.name}</li>`;
-                c.type === 'income' ? catListIn.innerHTML += html : catListOut.innerHTML += html;
-            });
-        }
-
-        // --- TRANSACTION LOGIC ---
-        window.handleTransactionSubmit = async (e) => {
-            e.preventDefault();
-            const type = document.getElementById('input-type').value;
-            const amt = parseFloat(document.getElementById('input-amount').value);
-            const accId = parseInt(document.getElementById('input-account').value);
-            const editId = document.getElementById('edit-id').value;
-            let catId = null, destId = null;
-
-            if(type !== 'transfer') catId = parseInt(document.getElementById('input-category').value);
-            else destId = parseInt(document.getElementById('input-account-dest').value);
-
-            if(type === 'transfer' && accId === destId) { alert("Rekening sama!"); return; }
-
-            if(editId) {
-                const idx = appData.transactions.findIndex(t => t.id == editId);
-                if(idx > -1) { revertBalance(appData.transactions[idx]); appData.transactions.splice(idx, 1); }
-            }
-
-            applyBalance({type, amount: amt, accountId: accId, destAccountId: destId});
-            appData.transactions.push({
-                id: editId ? parseInt(editId) : Date.now(),
-                date: document.getElementById('input-date').value,
-                type, amount: amt, categoryId: catId, accountId: accId, destAccountId: destId,
-                note: document.getElementById('input-note').value
-            });
-
-            await saveData();
-            cancelEdit();
-            switchTab('dashboard');
-            renderAll();
-        };
-
-        function applyBalance(t) {
-            const acc = appData.accounts.find(a => a.id === t.accountId);
-            const dest = appData.accounts.find(a => a.id === t.destAccountId);
-            if (!acc) return; // Guard
-            if(t.type === 'income') acc.balance += t.amount;
-            else if(t.type === 'expense') acc.balance -= t.amount;
-            else { acc.balance -= t.amount; if(dest) dest.balance += t.amount; }
-        }
-        function revertBalance(t) {
-            const acc = appData.accounts.find(a => a.id === t.accountId);
-            const dest = appData.accounts.find(a => a.id === t.destAccountId);
-            if (!acc) return; // Guard
-            if(t.type === 'income') acc.balance -= t.amount;
-            else if(t.type === 'expense') acc.balance += t.amount;
-            else { acc.balance += t.amount; if(dest) dest.balance -= t.amount; }
-        }
-
-        window.handleAddAccount = async (e) => {
-            e.preventDefault();
-            appData.accounts.push({
-                id: Date.now(),
-                name: document.getElementById('new-account-name').value,
-                balance: parseFloat(document.getElementById('new-account-balance').value),
-                isSavings: document.getElementById('new-account-is-savings').checked
-            });
-            await saveData();
-            e.target.reset(); renderAll();
-        };
-
-        window.handleAddCategory = async (e) => {
-            e.preventDefault();
-            appData.categories.push({ id: Date.now(), name: document.getElementById('new-cat-name').value, type: document.getElementById('new-cat-type').value });
-            await saveData();
-            document.getElementById('new-cat-name').value = ''; renderAll();
-        };
-
-        // --- VIEW HELPERS ---
-        window.switchTab = (tab) => {
-            ['view-dashboard', 'view-admin', 'view-add', 'view-data', 'view-summary', 'view-mutation'].forEach(id => document.getElementById(id).classList.add('hidden'));
-            document.getElementById(`view-${tab}`).classList.remove('hidden');
-            if(tab === 'add') populateOptions();
-        };
-
-        window.openMutation = () => { switchTab('view-mutation'); renderMutation(); }
-        window.openSummary = () => { switchTab('view-summary'); renderSummary(); }
-
-        window.setTxType = (t) => {
-            document.getElementById('input-type').value = t;
-            const btns = {income:'btn-type-income', expense:'btn-type-expense', transfer:'btn-type-transfer'};
-            Object.keys(btns).forEach(k => document.getElementById(btns[k]).className = `flex-1 py-2 text-xs font-bold rounded ${k===t ? (t==='income'?'bg-emerald-100 text-emerald-700':(t==='expense'?'bg-rose-100 text-rose-700':'bg-blue-100 text-blue-700')) : 'text-gray-500'}`);
-            
-            // Toggle Visibility
-            document.getElementById('group-category').classList.toggle('hidden', t === 'transfer');
-            document.getElementById('group-destination').classList.toggle('hidden', t !== 'transfer');
-            
-            // Toggle Required
-            document.getElementById('input-category').required = (t !== 'transfer');
-            document.getElementById('input-account-dest').required = (t === 'transfer');
-            
-            populateOptions();
-        };
-
-        window.populateOptions = () => {
-            const type = document.getElementById('input-type').value;
-            const catSel = document.getElementById('input-category');
-            catSel.innerHTML = '<option value="" disabled selected>Pilih Kategori</option>';
-            
-            // Check ID types. appData IDs are numbers (Date.now()), but values might be strings in HTML
-            appData.categories.filter(c => c.type === type).forEach(c => {
-                catSel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-            });
-            
-            const accHtml = '<option value="" disabled selected>Pilih...</option>' + appData.accounts.map(a => `<option value="${a.id}">${a.name} (${formatRp(a.balance)})</option>`).join('');
-            document.getElementById('input-account').innerHTML = accHtml;
-            document.getElementById('input-account-dest').innerHTML = accHtml;
-        };
-
-        window.prepareAdd = () => { cancelEdit(); switchTab('add'); };
-        window.cancelEdit = () => { document.getElementById('transactionForm').reset(); document.getElementById('edit-id').value = ''; document.getElementById('input-date').valueAsDate = new Date(); setTxType('expense'); switchTab('dashboard'); };
-        
-        window.openActionModal = (id) => { selectedTransactionId = id; document.getElementById('modal-action').classList.remove('hidden'); };
-        window.closeActionModal = () => document.getElementById('modal-action').classList.add('hidden');
-        window.editSelectedTransaction = () => {
-            const tx = appData.transactions.find(t => t.id === selectedTransactionId);
-            setTxType(tx.type);
-            document.getElementById('edit-id').value = tx.id;
-            document.getElementById('input-amount').value = tx.amount;
-            document.getElementById('input-date').value = tx.date;
-            document.getElementById('input-note').value = tx.note || '';
-            closeActionModal(); switchTab('add');
-        };
-        window.deleteSelectedTransaction = async () => {
-            const idx = appData.transactions.findIndex(t => t.id === selectedTransactionId);
-            revertBalance(appData.transactions[idx]);
-            appData.transactions.splice(idx, 1);
-            await saveData();
-            closeActionModal(); renderAll();
-        };
-
-        // Render Utils
-        function renderTxList(txs, el) {
-            el.innerHTML = '';
-            txs.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(t => {
-                // Find category robustly (handle string/number ID mismatch)
-                const cat = appData.categories.find(c => c.id == t.categoryId) || {name: t.type==='transfer'?'Pindah Buku':'-'};
-                const acc = appData.accounts.find(a => a.id == t.accountId) || {name:'?'};
-                
-                let color = 'text-gray-600';
-                let sign = '';
-                if(t.type === 'income') { color = 'text-emerald-600'; sign = '+'; }
-                else if(t.type === 'expense') { color = 'text-rose-600'; sign = '-'; }
-                else { color = 'text-blue-600'; }
-
-                el.innerHTML += `
-                    <div onclick="openActionModal(${t.id})" class="bg-white p-3 rounded-lg shadow-sm flex justify-between cursor-pointer border-l-4 ${t.type==='income'?'border-emerald-500':(t.type==='expense'?'border-rose-500':'border-blue-500')}">
+            appData.accounts.forEach(a => {
+                accList.innerHTML += `
+                    <li class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
                         <div>
-                            <p class="text-sm font-bold text-gray-800">${cat.name}</p>
-                            <p class="text-xs text-gray-500">${acc.name} • ${t.date}</p>
-                            <p class="text-[10px] text-gray-400 italic">${t.note || ''}</p>
+                            <span class="font-semibold text-gray-700">${a.name}</span>
+                            ${a.isSavings ? '<i class="fas fa-star text-yellow-500 text-xs ml-1" title="Tabungan"></i>' : ''}
                         </div>
-                        <span class="font-bold ${color}">${sign} ${formatRp(t.amount)}</span>
-                    </div>`;
+                        <span class="font-mono text-gray-600">${formatRp(a.balance)}</span>
+                    </li>
+                `;
+            });
+
+            // Cat Lists
+            const catIn = document.getElementById('settings-cat-income-list');
+            const catOut = document.getElementById('settings-cat-expense-list');
+            catIn.innerHTML = ''; catOut.innerHTML = '';
+
+            appData.categories.forEach(c => {
+                const item = `<li class="bg-white p-2 rounded border border-gray-200 text-gray-700 shadow-sm">${c.name}</li>`;
+                if(c.type === 'income') catIn.innerHTML += item;
+                else catOut.innerHTML += item;
             });
         }
 
-        // Filters Helper (Timezone Safe)
+        // --- FILTERING LOGIC (TIMEZONE SAFE) ---
+
         function formatDate(d) {
             const year = d.getFullYear();
             const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -734,123 +659,316 @@
             return `${year}-${month}-${day}`;
         }
 
-        // Filters
-        function initDateFilters() {
+        function getFilterRange(period, startElId, endElId) {
             const d = new Date(), y = d.getFullYear(), m = d.getMonth();
-            const s = formatDate(new Date(y, m, 1));
-            const e = formatDate(new Date(y, m + 1, 0));
-            
-            // Separate filters for Mutation and Summary to avoid conflict
-            document.getElementById('mut-start-date').value = s; document.getElementById('mut-end-date').value = e;
-            document.getElementById('filter-start-date').value = s; document.getElementById('filter-end-date').value = e;
+            if(period === 'thisMonth') {
+                return [formatDate(new Date(y, m, 1)), formatDate(new Date(y, m + 1, 0))];
+            } else if (period === 'lastMonth') {
+                return [formatDate(new Date(y, m - 1, 1)), formatDate(new Date(y, m, 0))];
+            } else {
+                return [document.getElementById(startElId).value, document.getElementById(endElId).value];
+            }
         }
 
-        window.toggleMutFilterMode = () => { document.getElementById('mut-filter-custom').classList.toggle('hidden', document.getElementById('mut-filter-period').value !== 'custom'); renderMutation(); };
-        window.toggleFilterMode = () => { document.getElementById('filter-custom-date').classList.toggle('hidden', document.getElementById('filter-period-select').value !== 'custom'); renderSummary(); };
+        // Mutation & Summary Filters
+        function initDateFilters() {
+            const now = new Date();
+            const s = formatDate(new Date(now.getFullYear(), now.getMonth(), 1));
+            const e = formatDate(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+            document.getElementById('mut-start-date').value = s;
+            document.getElementById('mut-end-date').value = e;
+            document.getElementById('filter-start-date').value = s;
+            document.getElementById('filter-end-date').value = e;
+        }
+
+        window.toggleMutFilterMode = () => {
+            const mode = document.getElementById('mut-filter-period').value;
+            document.getElementById('mut-filter-custom').classList.toggle('hidden', mode !== 'custom');
+            renderMutation();
+        };
 
         window.renderMutation = () => {
-            const period = document.getElementById('mut-filter-period').value;
-            let sStr, eStr;
-            const now = new Date();
-            const y = now.getFullYear();
-            const m = now.getMonth();
+            const mode = document.getElementById('mut-filter-period').value;
+            const [s, e] = getFilterRange(mode, 'mut-start-date', 'mut-end-date');
+            
+            const filtered = appData.transactions.filter(t => t.date >= s && t.date <= e);
+            const list = document.getElementById('mutation-list');
+            const empty = document.getElementById('mutation-empty');
 
-            if (period === 'custom') {
-                sStr = document.getElementById('mut-start-date').value;
-                eStr = document.getElementById('mut-end-date').value;
-            } else if (period === 'thisMonth') {
-                sStr = formatDate(new Date(y, m, 1));
-                eStr = formatDate(new Date(y, m + 1, 0));
-            } else if (period === 'lastMonth') {
-                sStr = formatDate(new Date(y, m - 1, 1));
-                eStr = formatDate(new Date(y, m, 0));
-            }
-            
-            // Robust String Comparison for Dates (YYYY-MM-DD)
-            const txs = appData.transactions.filter(t => t.date >= sStr && t.date <= eStr);
-            const listEl = document.getElementById('mutation-list');
-            const emptyEl = document.getElementById('mutation-empty');
-            
-            if(txs.length === 0) {
-                listEl.innerHTML = '';
-                emptyEl.classList.remove('hidden');
+            if(filtered.length === 0) {
+                list.innerHTML = '';
+                empty.classList.remove('hidden');
             } else {
-                emptyEl.classList.add('hidden');
-                renderTxList(txs, listEl);
+                empty.classList.add('hidden');
+                renderTxList(filtered, list);
             }
         };
 
+        window.toggleFilterMode = () => {
+            const mode = document.getElementById('filter-period-select').value;
+            document.getElementById('filter-custom-date').classList.toggle('hidden', mode !== 'custom');
+            renderSummary();
+        };
+
         window.renderSummary = () => {
-            const period = document.getElementById('filter-period-select').value;
-            let sStr, eStr;
-            const now = new Date();
-            const y = now.getFullYear();
-            const m = now.getMonth();
-            
-            // Duplicate logic needed for robust rendering independent of mutation tab state
-            if (period === 'custom') {
-                sStr = document.getElementById('filter-start-date').value;
-                eStr = document.getElementById('filter-end-date').value;
-            } else if (period === 'thisMonth') {
-                sStr = formatDate(new Date(y, m, 1));
-                eStr = formatDate(new Date(y, m + 1, 0));
-            } else if (period === 'lastMonth') {
-                sStr = formatDate(new Date(y, m - 1, 1));
-                eStr = formatDate(new Date(y, m, 0));
-            }
+            const mode = document.getElementById('filter-period-select').value;
+            const [s, e] = getFilterRange(mode, 'filter-start-date', 'filter-end-date');
+            const txs = appData.transactions.filter(t => t.date >= s && t.date <= e);
 
-            const txs = appData.transactions.filter(t => t.date >= sStr && t.date <= eStr);
+            // 1. Account Summary
+            const accList = document.getElementById('summary-accounts-list');
+            accList.innerHTML = '';
+            appData.accounts.forEach(a => {
+                accList.innerHTML += `<div class="flex justify-between py-2 border-b border-gray-100 last:border-0"><span>${a.name}</span><span class="font-bold text-gray-700">${formatRp(a.balance)}</span></div>`;
+            });
 
-            // Account Balances
-            const accList = document.getElementById('summary-accounts-list'); accList.innerHTML = '';
-            appData.accounts.forEach(a => accList.innerHTML += `<div class="flex justify-between py-2 border-b"><span>${a.name}</span><span class="font-bold">${formatRp(a.balance)}</span></div>`);
-
-            // Charts Helper
-            const renderBars = (type, listId, emptyId, colorCls, bgCls) => {
+            // 2. Charts Helper
+            const drawBars = (type, listId, emptyId, colorClass, bgClass) => {
                 const list = document.getElementById(listId);
                 const empty = document.getElementById(emptyId);
                 list.innerHTML = '';
-                
-                const typeTxs = txs.filter(t => t.type === type);
-                if (typeTxs.length === 0) {
-                    list.classList.add('hidden');
-                    empty.classList.remove('hidden');
-                    return;
-                }
-                
-                empty.classList.add('hidden');
-                list.classList.remove('hidden');
 
-                const map = {}; 
+                const subTxs = txs.filter(t => t.type === type);
+                if(subTxs.length === 0) {
+                    empty.classList.remove('hidden'); return;
+                }
+                empty.classList.add('hidden');
+
+                const map = {};
                 let total = 0;
-                typeTxs.forEach(t => { 
-                    map[t.categoryId] = (map[t.categoryId] || 0) + t.amount; 
-                    total += t.amount; 
+                subTxs.forEach(t => {
+                    map[t.categoryId] = (map[t.categoryId] || 0) + t.amount;
+                    total += t.amount;
                 });
 
                 Object.keys(map).sort((a,b) => map[b] - map[a]).forEach(catId => {
-                    const c = appData.categories.find(x => x.id == catId) || {name:'?'};
+                    const c = appData.categories.find(x => x.id == catId) || { name: 'Lainnya' };
                     const pct = Math.round((map[catId]/total)*100);
                     list.innerHTML += `
-                        <div class="mb-2">
+                        <div class="mb-3">
                             <div class="flex justify-between text-xs font-bold mb-1 text-gray-700">
                                 <span>${c.name}</span>
                                 <span>${pct}% (${formatRp(map[catId])})</span>
                             </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="h-2 rounded-full ${bgCls}" style="width:${pct}%"></div>
+                            <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                                <div class="h-full ${bgClass} progress-bar" style="width: ${pct}%"></div>
                             </div>
-                        </div>`;
+                        </div>
+                    `;
                 });
             };
 
-            renderBars('income', 'summary-income-list', 'summary-income-empty', 'text-emerald-600', 'bg-emerald-500');
-            renderBars('expense', 'summary-expense-list', 'summary-expense-empty', 'text-rose-600', 'bg-rose-500');
+            drawBars('income', 'summary-income-list', 'summary-income-empty', 'text-emerald-600', 'bg-emerald-500');
+            drawBars('expense', 'summary-expense-list', 'summary-expense-empty', 'text-rose-600', 'bg-rose-500');
+        };
+
+
+        // --- TRANSACTION FORMS ---
+
+        window.handleAddAccount = async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('new-account-name').value;
+            const bal = parseFloat(document.getElementById('new-account-balance').value);
+            const isSav = document.getElementById('new-account-is-savings').checked;
+            
+            appData.accounts.push({ id: Date.now(), name, balance: bal, isSavings: isSav });
+            await saveData();
+            e.target.reset(); renderAll();
+        };
+
+        window.handleAddCategory = async (e) => {
+            e.preventDefault();
+            const type = document.getElementById('new-cat-type').value;
+            const name = document.getElementById('new-cat-name').value;
+            
+            appData.categories.push({ id: Date.now(), name, type });
+            await saveData();
+            document.getElementById('new-cat-name').value = ''; renderAll();
+        };
+
+        window.handleTransactionSubmit = async (e) => {
+            e.preventDefault();
+            const type = document.getElementById('input-type').value;
+            const amt = parseFloat(document.getElementById('input-amount').value);
+            const accId = parseInt(document.getElementById('input-account').value);
+            const date = document.getElementById('input-date').value;
+            const note = document.getElementById('input-note').value;
+            const editId = document.getElementById('edit-id').value;
+
+            // Validation
+            let catId = null, destId = null;
+            if(type !== 'transfer') {
+                catId = parseInt(document.getElementById('input-category').value);
+                if(isNaN(catId)) { alert("Pilih Kategori!"); return; }
+            } else {
+                destId = parseInt(document.getElementById('input-account-dest').value);
+                if(accId === destId) { alert("Rekening tujuan harus beda!"); return; }
+            }
+
+            // If Edit, revert old first
+            if(editId) {
+                const idx = appData.transactions.findIndex(t => t.id == editId);
+                if(idx > -1) {
+                    revertBalance(appData.transactions[idx]);
+                    appData.transactions.splice(idx, 1);
+                }
+            }
+
+            const tx = {
+                id: editId ? parseInt(editId) : Date.now(),
+                date, type, amount: amt, accountId: accId, categoryId: catId, destAccountId: destId, note
+            };
+
+            // Apply Balance
+            applyBalance(tx);
+            appData.transactions.push(tx);
+
+            await saveData();
+            cancelEdit();
+            switchTab('dashboard');
+        };
+
+        function applyBalance(t) {
+            const acc = appData.accounts.find(a => a.id === t.accountId);
+            const dest = appData.accounts.find(a => a.id === t.destAccountId);
+            if(!acc) return;
+
+            if(t.type === 'income') acc.balance += t.amount;
+            else if(t.type === 'expense') acc.balance -= t.amount;
+            else if(t.type === 'transfer') {
+                acc.balance -= t.amount;
+                if(dest) dest.balance += t.amount;
+            }
+        }
+
+        function revertBalance(t) {
+            const acc = appData.accounts.find(a => a.id === t.accountId);
+            const dest = appData.accounts.find(a => a.id === t.destAccountId);
+            if(!acc) return;
+
+            if(t.type === 'income') acc.balance -= t.amount;
+            else if(t.type === 'expense') acc.balance += t.amount;
+            else if(t.type === 'transfer') {
+                acc.balance += t.amount;
+                if(dest) dest.balance -= t.amount;
+            }
+        }
+
+        // --- NAVIGATION & UI HELPERS ---
+
+        window.switchTab = (t) => {
+            ['view-dashboard', 'view-add', 'view-data', 'view-summary', 'view-mutation', 'view-admin'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.classList.add('hidden');
+            });
+            document.getElementById(`view-${t}`).classList.remove('hidden');
+            
+            // Nav Icons
+            const navs = ['dashboard', 'data'];
+            navs.forEach(n => {
+                const elIcon = document.getElementById(`nav-icon-${n}`);
+                const elText = document.getElementById(`nav-text-${n}`);
+                if(elIcon) elIcon.className = `fas fa-${n==='dashboard'?'home':'database'} text-xl mb-1 ${t===n ? 'tab-active':'tab-inactive'}`;
+                if(elText) elText.className = `text-xs font-medium ${t===n ? 'tab-active':'tab-inactive'}`;
+            });
+
+            if(t==='add') populateOptions();
+        };
+
+        window.openMutation = () => { switchTab('mutation'); renderMutation(); }
+        window.openSummary = () => { switchTab('summary'); renderSummary(); }
+
+        window.setTxType = (t) => {
+            document.getElementById('input-type').value = t;
+            
+            // Buttons
+            const btns = {income:'btn-type-income', expense:'btn-type-expense', transfer:'btn-type-transfer'};
+            Object.keys(btns).forEach(k => {
+                const el = document.getElementById(btns[k]);
+                el.className = `flex-1 py-2 text-xs font-bold rounded transition-all ${k===t 
+                    ? (t==='income'?'bg-emerald-100 text-emerald-700':(t==='expense'?'bg-rose-100 text-rose-700':'bg-blue-100 text-blue-700')) 
+                    : 'text-gray-500'}`;
+            });
+
+            // Visibility
+            const grpCat = document.getElementById('group-category');
+            const grpDest = document.getElementById('group-destination');
+            
+            if(t === 'transfer') {
+                grpCat.classList.add('hidden');
+                grpDest.classList.remove('hidden');
+            } else {
+                grpCat.classList.remove('hidden');
+                grpDest.classList.add('hidden');
+            }
+            populateOptions();
+        };
+
+        window.populateOptions = () => {
+            const type = document.getElementById('input-type').value;
+            const catSel = document.getElementById('input-category');
+            catSel.innerHTML = '<option value="" disabled selected>Pilih Kategori</option>';
+
+            appData.categories.filter(c => c.type === type).forEach(c => {
+                catSel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+            });
+
+            const accHtml = '<option value="" disabled selected>Pilih...</option>' + appData.accounts.map(a => `<option value="${a.id}">${a.name} (${formatRp(a.balance)})</option>`).join('');
+            document.getElementById('input-account').innerHTML = accHtml;
+            document.getElementById('input-account-dest').innerHTML = accHtml;
+
+            // Hints
+            document.getElementById('hint-no-cat').classList.toggle('hidden', appData.categories.filter(c => c.type === type).length > 0);
+            document.getElementById('hint-no-acc').classList.toggle('hidden', appData.accounts.length > 0);
+        };
+
+        window.prepareAdd = () => { cancelEdit(); switchTab('add'); };
+        window.cancelEdit = () => { 
+            document.getElementById('transactionForm').reset(); 
+            document.getElementById('edit-id').value = ''; 
+            document.getElementById('input-date').valueAsDate = new Date(); 
+            setTxType('expense'); 
+            switchTab('dashboard'); 
+        };
+
+        window.openActionModal = (id) => { selectedTransactionId = id; document.getElementById('modal-action').classList.remove('hidden'); };
+        window.closeActionModal = () => document.getElementById('modal-action').classList.add('hidden');
+        
+        window.editSelectedTransaction = () => {
+            const tx = appData.transactions.find(t => t.id === selectedTransactionId);
+            setTxType(tx.type);
+            document.getElementById('edit-id').value = tx.id;
+            document.getElementById('input-amount').value = tx.amount;
+            document.getElementById('input-date').value = tx.date;
+            document.getElementById('input-note').value = tx.note || '';
+            
+            // Populate Dropdowns first
+            populateOptions();
+            
+            // Set Values
+            document.getElementById('input-account').value = tx.accountId;
+            if(tx.type !== 'transfer') document.getElementById('input-category').value = tx.categoryId;
+            else document.getElementById('input-account-dest').value = tx.destAccountId;
+
+            closeActionModal(); 
+            switchTab('add');
+        };
+
+        window.deleteSelectedTransaction = async () => {
+            const idx = appData.transactions.findIndex(t => t.id === selectedTransactionId);
+            if(idx > -1) {
+                revertBalance(appData.transactions[idx]);
+                appData.transactions.splice(idx, 1);
+                await saveData();
+                closeActionModal();
+                renderAll();
+            }
         };
 
         function formatRp(n) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n); }
-        function showToast(m) { const t=document.getElementById('toast'); t.textContent=m; t.classList.remove('opacity-0'); setTimeout(()=>t.classList.add('opacity-0'), 2000); }
+        function showToast(m) { const t=document.getElementById('toast'); document.getElementById('toast-message').textContent=m; t.classList.remove('opacity-0'); setTimeout(()=>t.classList.add('opacity-0'), 2000); }
 
+        // Default Date
         document.getElementById('input-date').valueAsDate = new Date();
     </script>
 </body>
