@@ -198,7 +198,7 @@
                     <button onclick="switchTab('dashboard')" class="text-sm text-indigo-600 bg-indigo-50 px-3 py-1 rounded">Tutup</button>
                 </div>
                 
-                <!-- Filter for Summary (Hidden reuse of mutation filter dates is confusing, better separate) -->
+                <!-- Filter for Summary -->
                 <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100">
                     <h3 class="font-bold text-gray-700 text-xs uppercase mb-3">Filter Periode</h3>
                     <div class="flex flex-col gap-3">
@@ -545,7 +545,7 @@
             // Recent Tx
             const list = document.getElementById('recent-transactions-list');
             list.innerHTML = '';
-            const today = new Date().toISOString().split('T')[0];
+            const today = formatDate(new Date());
             const todayTx = appData.transactions.filter(t => t.date === today);
             
             document.getElementById('dashboard-empty-alert').classList.toggle('hidden', appData.accounts.length > 0);
@@ -651,22 +651,29 @@
             document.getElementById('input-type').value = t;
             const btns = {income:'btn-type-income', expense:'btn-type-expense', transfer:'btn-type-transfer'};
             Object.keys(btns).forEach(k => document.getElementById(btns[k]).className = `flex-1 py-2 text-xs font-bold rounded ${k===t ? (t==='income'?'bg-emerald-100 text-emerald-700':(t==='expense'?'bg-rose-100 text-rose-700':'bg-blue-100 text-blue-700')) : 'text-gray-500'}`);
+            
+            // Toggle Visibility
             document.getElementById('group-category').classList.toggle('hidden', t === 'transfer');
             document.getElementById('group-destination').classList.toggle('hidden', t !== 'transfer');
+            
+            // Toggle Required
+            document.getElementById('input-category').required = (t !== 'transfer');
+            document.getElementById('input-account-dest').required = (t === 'transfer');
+            
             populateOptions();
         };
 
         window.populateOptions = () => {
             const type = document.getElementById('input-type').value;
             const catSel = document.getElementById('input-category');
-            catSel.innerHTML = '';
+            catSel.innerHTML = '<option value="" disabled selected>Pilih Kategori</option>';
             
             // Check ID types. appData IDs are numbers (Date.now()), but values might be strings in HTML
             appData.categories.filter(c => c.type === type).forEach(c => {
                 catSel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
             });
             
-            const accHtml = appData.accounts.map(a => `<option value="${a.id}">${a.name} (${formatRp(a.balance)})</option>`).join('');
+            const accHtml = '<option value="" disabled selected>Pilih...</option>' + appData.accounts.map(a => `<option value="${a.id}">${a.name} (${formatRp(a.balance)})</option>`).join('');
             document.getElementById('input-account').innerHTML = accHtml;
             document.getElementById('input-account-dest').innerHTML = accHtml;
         };
@@ -719,11 +726,20 @@
             });
         }
 
+        // Filters Helper (Timezone Safe)
+        function formatDate(d) {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
         // Filters
         function initDateFilters() {
             const d = new Date(), y = d.getFullYear(), m = d.getMonth();
-            const s = new Date(y, m, 1).toISOString().split('T')[0];
-            const e = new Date(y, m + 1, 0).toISOString().split('T')[0];
+            const s = formatDate(new Date(y, m, 1));
+            const e = formatDate(new Date(y, m + 1, 0));
+            
             // Separate filters for Mutation and Summary to avoid conflict
             document.getElementById('mut-start-date').value = s; document.getElementById('mut-end-date').value = e;
             document.getElementById('filter-start-date').value = s; document.getElementById('filter-end-date').value = e;
@@ -735,19 +751,19 @@
         window.renderMutation = () => {
             const period = document.getElementById('mut-filter-period').value;
             let sStr, eStr;
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = now.getMonth();
 
             if (period === 'custom') {
                 sStr = document.getElementById('mut-start-date').value;
                 eStr = document.getElementById('mut-end-date').value;
-            } else {
-                const d = new Date(), y = d.getFullYear(), m = d.getMonth();
-                if (period === 'thisMonth') {
-                    sStr = new Date(y, m, 1).toISOString().split('T')[0];
-                    eStr = new Date(y, m + 1, 0).toISOString().split('T')[0];
-                } else {
-                    sStr = new Date(y, m - 1, 1).toISOString().split('T')[0];
-                    eStr = new Date(y, m, 0).toISOString().split('T')[0];
-                }
+            } else if (period === 'thisMonth') {
+                sStr = formatDate(new Date(y, m, 1));
+                eStr = formatDate(new Date(y, m + 1, 0));
+            } else if (period === 'lastMonth') {
+                sStr = formatDate(new Date(y, m - 1, 1));
+                eStr = formatDate(new Date(y, m, 0));
             }
             
             // Robust String Comparison for Dates (YYYY-MM-DD)
@@ -767,20 +783,20 @@
         window.renderSummary = () => {
             const period = document.getElementById('filter-period-select').value;
             let sStr, eStr;
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = now.getMonth();
             
             // Duplicate logic needed for robust rendering independent of mutation tab state
             if (period === 'custom') {
                 sStr = document.getElementById('filter-start-date').value;
                 eStr = document.getElementById('filter-end-date').value;
-            } else {
-                const d = new Date(), y = d.getFullYear(), m = d.getMonth();
-                if (period === 'thisMonth') {
-                    sStr = new Date(y, m, 1).toISOString().split('T')[0];
-                    eStr = new Date(y, m + 1, 0).toISOString().split('T')[0];
-                } else {
-                    sStr = new Date(y, m - 1, 1).toISOString().split('T')[0];
-                    eStr = new Date(y, m, 0).toISOString().split('T')[0];
-                }
+            } else if (period === 'thisMonth') {
+                sStr = formatDate(new Date(y, m, 1));
+                eStr = formatDate(new Date(y, m + 1, 0));
+            } else if (period === 'lastMonth') {
+                sStr = formatDate(new Date(y, m - 1, 1));
+                eStr = formatDate(new Date(y, m, 0));
             }
 
             const txs = appData.transactions.filter(t => t.date >= sStr && t.date <= eStr);
