@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mando & Mega - Supabase</title>
+    <title>Mando&Mega - Supabase</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -41,14 +41,14 @@
 </head>
 <body class="h-screen flex flex-col overflow-hidden bg-gray-50">
 
-    <!-- === VIEW: LOGIN (DIGANTI DARI PIN KE USERNAME/PASS) === -->
+    <!-- === VIEW: LOGIN === -->
     <div id="view-login" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-6">
         <div class="w-full max-w-sm">
             <div class="mb-8 text-center">
                 <div class="w-16 h-16 bg-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-white text-2xl mb-4 shadow-lg">
                     <i class="fas fa-wallet"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-800">Mando & Mega</h2>
+                <h2 class="text-2xl font-bold text-gray-800">Mando&Mega</h2>
                 <p class="text-sm text-gray-500">Login Database Online</p>
             </div>
 
@@ -79,20 +79,12 @@
         </div>
     </div>
 
-    <!-- === SECTION: MAIN APP (UI ASLI DIPERTAHANKAN) === -->
+    <!-- === SECTION: MAIN APP === -->
     <div id="app-container" class="hidden h-screen flex flex-col">
         
-        <!-- Header -->
-        <header class="bg-indigo-600 text-white p-4 shadow-md z-10 flex justify-between items-center">
-            <h1 class="text-xl font-bold"><i class="fas fa-wallet mr-2"></i>Mando & Mega</h1>
-            <div class="flex gap-2">
-                <button onclick="openMutation()" class="bg-indigo-500 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center">
-                    <i class="fas fa-list-ul mr-2"></i> Mutasi
-                </button>
-                <button onclick="openSummary()" class="bg-indigo-700 hover:bg-indigo-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center">
-                    <i class="fas fa-chart-pie mr-2"></i> Rekapan
-                </button>
-            </div>
+        <!-- Header (Tombol dihapus, Judul dipusatkan) -->
+        <header class="bg-indigo-600 text-white p-4 shadow-md z-10 flex justify-center items-center">
+            <h1 class="text-xl font-bold"><i class="fas fa-wallet mr-2"></i>Mando&Mega</h1>
         </header>
 
         <!-- Main Content -->
@@ -329,21 +321,38 @@
             </div>
         </main>
 
-        <!-- Navbar -->
+        <!-- Navbar (Bottom) -->
         <nav class="bg-white border-t border-gray-200 fixed bottom-0 w-full z-20 pb-safe">
-            <div class="flex justify-around items-center h-16">
-                <button onclick="switchTab('dashboard')" class="flex flex-col items-center w-full justify-center group">
-                    <i id="nav-icon-dashboard" class="fas fa-home text-xl mb-1 tab-active"></i>
-                    <span id="nav-text-dashboard" class="text-xs font-medium tab-active">Beranda</span>
+            <div class="grid grid-cols-5 items-center h-16">
+                <!-- 1. Beranda -->
+                <button onclick="switchTab('dashboard')" class="flex flex-col items-center justify-center group">
+                    <i id="nav-icon-dashboard" class="fas fa-home text-lg mb-1 tab-active"></i>
+                    <span id="nav-text-dashboard" class="text-[10px] font-medium tab-active">Beranda</span>
                 </button>
-                <button onclick="prepareAdd()" class="flex flex-col items-center w-full justify-center -mt-6">
-                    <div class="w-14 h-14 bg-indigo-600 rounded-full shadow-lg flex items-center justify-center text-white border-4 border-gray-100 active:scale-95 transition-transform">
-                        <i class="fas fa-plus text-2xl"></i>
+
+                <!-- 2. Mutasi -->
+                <button onclick="switchTab('mutation')" class="flex flex-col items-center justify-center group">
+                    <i id="nav-icon-mutation" class="fas fa-list-ul text-lg mb-1 tab-inactive"></i>
+                    <span id="nav-text-mutation" class="text-[10px] font-medium tab-inactive">Mutasi</span>
+                </button>
+
+                <!-- 3. Add (Center) -->
+                <button onclick="prepareAdd()" class="flex flex-col items-center justify-center relative">
+                    <div class="w-12 h-12 bg-indigo-600 rounded-full shadow-lg flex items-center justify-center text-white border-4 border-gray-100 -mt-6 active:scale-95 transition-transform">
+                        <i class="fas fa-plus text-xl"></i>
                     </div>
                 </button>
-                <button onclick="switchTab('data')" class="flex flex-col items-center w-full justify-center group">
-                    <i id="nav-icon-data" class="fas fa-database text-xl mb-1 tab-inactive"></i>
-                    <span id="nav-text-data" class="text-xs font-medium tab-inactive">Data</span>
+
+                <!-- 4. Rekapan -->
+                <button onclick="switchTab('summary')" class="flex flex-col items-center justify-center group">
+                    <i id="nav-icon-summary" class="fas fa-chart-pie text-lg mb-1 tab-inactive"></i>
+                    <span id="nav-text-summary" class="text-[10px] font-medium tab-inactive">Rekapan</span>
+                </button>
+
+                <!-- 5. Data -->
+                <button onclick="switchTab('data')" class="flex flex-col items-center justify-center group">
+                    <i id="nav-icon-data" class="fas fa-database text-lg mb-1 tab-inactive"></i>
+                    <span id="nav-text-data" class="text-[10px] font-medium tab-inactive">Data</span>
                 </button>
             </div>
         </nav>
@@ -863,13 +872,29 @@
             });
             document.getElementById(`view-${t}`).classList.remove('hidden');
             
-            // Nav Icons
-            const navs = ['dashboard', 'data'];
+            // Nav Icons Handling
+            const navs = ['dashboard', 'mutation', 'summary', 'data'];
+            const icons = {
+                dashboard: 'home',
+                mutation: 'list-ul',
+                summary: 'chart-pie',
+                data: 'database'
+            };
+
             navs.forEach(n => {
                 const elIcon = document.getElementById(`nav-icon-${n}`);
                 const elText = document.getElementById(`nav-text-${n}`);
-                if(elIcon) elIcon.className = `fas fa-${n==='dashboard'?'home':'database'} text-xl mb-1 ${t===n ? 'tab-active':'tab-inactive'}`;
-                if(elText) elText.className = `text-xs font-medium ${t===n ? 'tab-active':'tab-inactive'}`;
+                
+                // Determine active state
+                const isActive = t === n;
+                const colorClass = isActive ? 'tab-active' : 'tab-inactive';
+                
+                if(elIcon) {
+                    elIcon.className = `fas fa-${icons[n]} text-lg mb-1 ${colorClass}`;
+                }
+                if(elText) {
+                    elText.className = `text-[10px] font-medium ${colorClass}`;
+                }
             });
 
             if(t==='add') populateOptions();
@@ -973,4 +998,3 @@
     </script>
 </body>
 </html>
-
