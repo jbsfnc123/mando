@@ -168,7 +168,7 @@
                 </div>
             </div>
 
-            <!-- MUTATION, SUMMARY, ADD, DATA VIEWS -->
+            <!-- MUTATION VIEW -->
             <div id="view-mutation" class="hidden fade-in pb-20">
                  <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-bold text-gray-800">Mutasi</h2>
@@ -188,22 +188,53 @@
                     </div>
                 </div>
                 <div id="mutation-list" class="space-y-3"></div>
-                <div id="mutation-empty" class="hidden text-center text-gray-400 text-sm py-10">Kosong</div>
+                <div id="mutation-empty" class="hidden text-center text-gray-400 text-sm py-10">Tidak ada data transaksi.</div>
             </div>
 
+            <!-- SUMMARY VIEW -->
             <div id="view-summary" class="hidden fade-in pb-20">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-bold text-gray-800">Rekapan</h2>
                     <button onclick="switchTab('dashboard')" class="text-sm text-indigo-600 bg-indigo-50 px-3 py-1 rounded">Tutup</button>
                 </div>
+                
+                <!-- Filter for Summary (Hidden reuse of mutation filter dates is confusing, better separate) -->
+                <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100">
+                    <h3 class="font-bold text-gray-700 text-xs uppercase mb-3">Filter Periode</h3>
+                    <div class="flex flex-col gap-3">
+                        <select id="filter-period-select" onchange="toggleFilterMode()" class="p-2 border rounded-lg text-sm bg-gray-50">
+                            <option value="thisMonth">Bulan Ini</option>
+                            <option value="lastMonth">Bulan Lalu</option>
+                            <option value="custom">Pilih Tanggal</option>
+                        </select>
+                        <div id="filter-custom-date" class="hidden grid grid-cols-2 gap-2">
+                            <input type="date" id="filter-start-date" onchange="renderSummary()" class="p-2 border rounded-lg text-sm">
+                            <input type="date" id="filter-end-date" onchange="renderSummary()" class="p-2 border rounded-lg text-sm">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="bg-white p-4 rounded-xl shadow-sm mb-4">
                     <h3 class="font-bold text-gray-700 text-sm mb-3">Posisi Saldo</h3>
                     <div id="summary-accounts-list" class="space-y-2 text-sm"></div>
                 </div>
-                <!-- Filter tanggal tersembunyi default utk summary -->
-                <input type="date" id="filter-start-date" class="hidden"><input type="date" id="filter-end-date" class="hidden">
+                
+                <!-- Income Analysis -->
+                <div class="bg-white p-4 rounded-xl shadow-sm mb-4">
+                    <h3 class="font-bold text-gray-700 text-sm mb-4">Sumber Pemasukan</h3>
+                    <div id="summary-income-list" class="space-y-4"></div>
+                    <div id="summary-income-empty" class="hidden text-center text-gray-400 text-sm py-2 italic">Tidak ada pemasukan.</div>
+                </div>
+
+                <!-- Expense Analysis -->
+                <div class="bg-white p-4 rounded-xl shadow-sm mb-4">
+                    <h3 class="font-bold text-gray-700 text-sm mb-4">Analisa Pengeluaran</h3>
+                    <div id="summary-expense-list" class="space-y-4"></div>
+                    <div id="summary-expense-empty" class="hidden text-center text-gray-400 text-sm py-2 italic">Tidak ada pengeluaran.</div>
+                </div>
             </div>
 
+            <!-- ADD VIEW -->
             <div id="view-add" class="hidden fade-in">
                 <div class="bg-white rounded-xl shadow-md p-6">
                     <h2 id="form-title" class="text-xl font-bold text-gray-800 mb-4 text-center">Catat Transaksi</h2>
@@ -319,7 +350,6 @@
             document.getElementById('setup-warning').classList.remove('hidden');
         } else {
             supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            // Cek session login sederhana (localStorage)
             const savedUser = localStorage.getItem('keuanganku_user');
             if(savedUser) {
                 currentUser = JSON.parse(savedUser);
@@ -342,17 +372,15 @@
             errBox.classList.add('hidden');
 
             try {
-                // Login Custom: Cek tabel 'users' manual
                 const { data, error } = await supabaseClient
                     .from('users')
                     .select('id, username, role')
                     .eq('username', u)
-                    .eq('password', p) // Note: Plaintext password (sesuai request)
+                    .eq('password', p)
                     .single();
 
                 if (error || !data) throw new Error("Username atau password salah");
 
-                // Login Sukses
                 currentUser = data;
                 localStorage.setItem('keuanganku_user', JSON.stringify(currentUser));
                 onLoginSuccess();
@@ -371,7 +399,6 @@
             document.getElementById('user-display-name').textContent = currentUser.username;
             document.getElementById('user-display-role').textContent = currentUser.role;
 
-            // Show Admin Banner if Admin
             if(currentUser.role === 'admin') {
                 document.getElementById('admin-banner').classList.remove('hidden');
                 loadAdminUserList();
@@ -408,7 +435,6 @@
 
             if (data && data.data) {
                 appData = data.data;
-                // Init defaults if empty
                 if(!appData.accounts) appData.accounts = [];
                 if(!appData.categories) appData.categories = [];
                 if(!appData.transactions) appData.transactions = [];
@@ -428,9 +454,6 @@
             const sync = document.getElementById('sync-indicator');
             if(sync) sync.innerHTML = '<i class="fas fa-sync fa-spin mr-1"></i> Saving...';
 
-            // Debug untuk melihat data yang akan dikirim
-            console.log("Saving data for user:", currentUser.id, appData);
-
             const { error } = await supabaseClient
                 .from('users')
                 .update({ data: appData })
@@ -438,10 +461,9 @@
 
             if(error) {
                 console.error("Save Error:", error);
-                // Menampilkan error detail ke user
                 let msg = error.message;
                 if(msg.includes("violates row-level security policy")) {
-                    msg = "Gagal Simpan: Izin Ditolak (Cek Policy RLS)";
+                    msg = "Gagal Simpan: Izin Ditolak";
                 }
                 showToast(msg);
                 if(sync) sync.innerHTML = '<i class="fas fa-exclamation-circle text-red-500 text-[6px] mr-1"></i> Error';
@@ -452,7 +474,6 @@
         }
 
         // --- ADMIN FUNCTIONS ---
-
         async function handleCreateUser(e) {
             e.preventDefault();
             if(currentUser.role !== 'admin') return;
@@ -489,22 +510,13 @@
                 data.forEach(u => {
                     const isMe = u.id === currentUser.id;
                     const btnDelete = isMe ? '' : `<button onclick="deleteUser(${u.id})" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>`;
-                    
-                    list.innerHTML += `
-                        <div class="flex justify-between items-center bg-gray-50 p-2 rounded text-sm border border-gray-100">
-                            <div>
-                                <span class="font-bold text-gray-700">${u.username}</span>
-                                <span class="text-xs bg-gray-200 px-1 rounded ml-2 text-gray-500">${u.role}</span>
-                            </div>
-                            ${btnDelete}
-                        </div>
-                    `;
+                    list.innerHTML += `<div class="flex justify-between items-center bg-gray-50 p-2 rounded text-sm border border-gray-100"><div><span class="font-bold text-gray-700">${u.username}</span><span class="text-xs bg-gray-200 px-1 rounded ml-2 text-gray-500">${u.role}</span></div>${btnDelete}</div>`;
                 });
             }
         }
 
         window.deleteUser = async (id) => {
-            if(confirm("Hapus user ini permanen? Data mereka akan hilang.")) {
+            if(confirm("Hapus user ini permanen?")) {
                 const { error } = await supabaseClient.from('users').delete().eq('id', id);
                 if(error) alert("Gagal hapus: " + error.message);
                 else loadAdminUserList();
@@ -592,16 +604,18 @@
         function applyBalance(t) {
             const acc = appData.accounts.find(a => a.id === t.accountId);
             const dest = appData.accounts.find(a => a.id === t.destAccountId);
+            if (!acc) return; // Guard
             if(t.type === 'income') acc.balance += t.amount;
             else if(t.type === 'expense') acc.balance -= t.amount;
-            else { acc.balance -= t.amount; dest.balance += t.amount; }
+            else { acc.balance -= t.amount; if(dest) dest.balance += t.amount; }
         }
         function revertBalance(t) {
             const acc = appData.accounts.find(a => a.id === t.accountId);
             const dest = appData.accounts.find(a => a.id === t.destAccountId);
+            if (!acc) return; // Guard
             if(t.type === 'income') acc.balance -= t.amount;
             else if(t.type === 'expense') acc.balance += t.amount;
-            else { acc.balance += t.amount; dest.balance -= t.amount; }
+            else { acc.balance += t.amount; if(dest) dest.balance -= t.amount; }
         }
 
         window.handleAddAccount = async (e) => {
@@ -646,7 +660,11 @@
             const type = document.getElementById('input-type').value;
             const catSel = document.getElementById('input-category');
             catSel.innerHTML = '';
-            appData.categories.filter(c => c.type === type).forEach(c => catSel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+            
+            // Check ID types. appData IDs are numbers (Date.now()), but values might be strings in HTML
+            appData.categories.filter(c => c.type === type).forEach(c => {
+                catSel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+            });
             
             const accHtml = appData.accounts.map(a => `<option value="${a.id}">${a.name} (${formatRp(a.balance)})</option>`).join('');
             document.getElementById('input-account').innerHTML = accHtml;
@@ -678,36 +696,140 @@
         // Render Utils
         function renderTxList(txs, el) {
             el.innerHTML = '';
-            txs.forEach(t => {
-                const cat = appData.categories.find(c => c.id == t.categoryId) || {name: t.type==='transfer'?'Pindah':'-'};
+            txs.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(t => {
+                // Find category robustly (handle string/number ID mismatch)
+                const cat = appData.categories.find(c => c.id == t.categoryId) || {name: t.type==='transfer'?'Pindah Buku':'-'};
                 const acc = appData.accounts.find(a => a.id == t.accountId) || {name:'?'};
-                const color = t.type === 'income' ? 'text-emerald-600' : (t.type==='expense'?'text-rose-600':'text-blue-600');
-                const sign = t.type === 'income' ? '+' : (t.type==='expense'?'-':'');
-                el.innerHTML += `<div onclick="openActionModal(${t.id})" class="bg-white p-3 rounded-lg shadow-sm flex justify-between cursor-pointer"><div><p class="text-sm font-bold text-gray-800">${cat.name}</p><p class="text-xs text-gray-500">${acc.name} • ${t.date}</p></div><span class="font-bold ${color}">${sign} ${formatRp(t.amount)}</span></div>`;
+                
+                let color = 'text-gray-600';
+                let sign = '';
+                if(t.type === 'income') { color = 'text-emerald-600'; sign = '+'; }
+                else if(t.type === 'expense') { color = 'text-rose-600'; sign = '-'; }
+                else { color = 'text-blue-600'; }
+
+                el.innerHTML += `
+                    <div onclick="openActionModal(${t.id})" class="bg-white p-3 rounded-lg shadow-sm flex justify-between cursor-pointer border-l-4 ${t.type==='income'?'border-emerald-500':(t.type==='expense'?'border-rose-500':'border-blue-500')}">
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">${cat.name}</p>
+                            <p class="text-xs text-gray-500">${acc.name} • ${t.date}</p>
+                            <p class="text-[10px] text-gray-400 italic">${t.note || ''}</p>
+                        </div>
+                        <span class="font-bold ${color}">${sign} ${formatRp(t.amount)}</span>
+                    </div>`;
             });
         }
 
-        // Filters (Simplified for brevity)
+        // Filters
         function initDateFilters() {
             const d = new Date(), y = d.getFullYear(), m = d.getMonth();
             const s = new Date(y, m, 1).toISOString().split('T')[0];
             const e = new Date(y, m + 1, 0).toISOString().split('T')[0];
+            // Separate filters for Mutation and Summary to avoid conflict
             document.getElementById('mut-start-date').value = s; document.getElementById('mut-end-date').value = e;
             document.getElementById('filter-start-date').value = s; document.getElementById('filter-end-date').value = e;
         }
+
         window.toggleMutFilterMode = () => { document.getElementById('mut-filter-custom').classList.toggle('hidden', document.getElementById('mut-filter-period').value !== 'custom'); renderMutation(); };
+        window.toggleFilterMode = () => { document.getElementById('filter-custom-date').classList.toggle('hidden', document.getElementById('filter-period-select').value !== 'custom'); renderSummary(); };
+
         window.renderMutation = () => {
-            const s = new Date(document.getElementById('mut-start-date').value);
-            const e = new Date(document.getElementById('mut-end-date').value); e.setHours(23,59,59);
-            const txs = appData.transactions.filter(t => new Date(t.date) >= s && new Date(t.date) <= e);
-            renderTxList(txs, document.getElementById('mutation-list'));
+            const period = document.getElementById('mut-filter-period').value;
+            let sStr, eStr;
+
+            if (period === 'custom') {
+                sStr = document.getElementById('mut-start-date').value;
+                eStr = document.getElementById('mut-end-date').value;
+            } else {
+                const d = new Date(), y = d.getFullYear(), m = d.getMonth();
+                if (period === 'thisMonth') {
+                    sStr = new Date(y, m, 1).toISOString().split('T')[0];
+                    eStr = new Date(y, m + 1, 0).toISOString().split('T')[0];
+                } else {
+                    sStr = new Date(y, m - 1, 1).toISOString().split('T')[0];
+                    eStr = new Date(y, m, 0).toISOString().split('T')[0];
+                }
+            }
+            
+            // Robust String Comparison for Dates (YYYY-MM-DD)
+            const txs = appData.transactions.filter(t => t.date >= sStr && t.date <= eStr);
+            const listEl = document.getElementById('mutation-list');
+            const emptyEl = document.getElementById('mutation-empty');
+            
+            if(txs.length === 0) {
+                listEl.innerHTML = '';
+                emptyEl.classList.remove('hidden');
+            } else {
+                emptyEl.classList.add('hidden');
+                renderTxList(txs, listEl);
+            }
         };
+
         window.renderSummary = () => {
-            const s = new Date(document.getElementById('filter-start-date').value);
-            const e = new Date(document.getElementById('filter-end-date').value); e.setHours(23,59,59);
-            const txs = appData.transactions.filter(t => new Date(t.date) >= s && new Date(t.date) <= e);
+            const period = document.getElementById('filter-period-select').value;
+            let sStr, eStr;
+            
+            // Duplicate logic needed for robust rendering independent of mutation tab state
+            if (period === 'custom') {
+                sStr = document.getElementById('filter-start-date').value;
+                eStr = document.getElementById('filter-end-date').value;
+            } else {
+                const d = new Date(), y = d.getFullYear(), m = d.getMonth();
+                if (period === 'thisMonth') {
+                    sStr = new Date(y, m, 1).toISOString().split('T')[0];
+                    eStr = new Date(y, m + 1, 0).toISOString().split('T')[0];
+                } else {
+                    sStr = new Date(y, m - 1, 1).toISOString().split('T')[0];
+                    eStr = new Date(y, m, 0).toISOString().split('T')[0];
+                }
+            }
+
+            const txs = appData.transactions.filter(t => t.date >= sStr && t.date <= eStr);
+
+            // Account Balances
             const accList = document.getElementById('summary-accounts-list'); accList.innerHTML = '';
             appData.accounts.forEach(a => accList.innerHTML += `<div class="flex justify-between py-2 border-b"><span>${a.name}</span><span class="font-bold">${formatRp(a.balance)}</span></div>`);
+
+            // Charts Helper
+            const renderBars = (type, listId, emptyId, colorCls, bgCls) => {
+                const list = document.getElementById(listId);
+                const empty = document.getElementById(emptyId);
+                list.innerHTML = '';
+                
+                const typeTxs = txs.filter(t => t.type === type);
+                if (typeTxs.length === 0) {
+                    list.classList.add('hidden');
+                    empty.classList.remove('hidden');
+                    return;
+                }
+                
+                empty.classList.add('hidden');
+                list.classList.remove('hidden');
+
+                const map = {}; 
+                let total = 0;
+                typeTxs.forEach(t => { 
+                    map[t.categoryId] = (map[t.categoryId] || 0) + t.amount; 
+                    total += t.amount; 
+                });
+
+                Object.keys(map).sort((a,b) => map[b] - map[a]).forEach(catId => {
+                    const c = appData.categories.find(x => x.id == catId) || {name:'?'};
+                    const pct = Math.round((map[catId]/total)*100);
+                    list.innerHTML += `
+                        <div class="mb-2">
+                            <div class="flex justify-between text-xs font-bold mb-1 text-gray-700">
+                                <span>${c.name}</span>
+                                <span>${pct}% (${formatRp(map[catId])})</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="h-2 rounded-full ${bgCls}" style="width:${pct}%"></div>
+                            </div>
+                        </div>`;
+                });
+            };
+
+            renderBars('income', 'summary-income-list', 'summary-income-empty', 'text-emerald-600', 'bg-emerald-500');
+            renderBars('expense', 'summary-expense-list', 'summary-expense-empty', 'text-rose-600', 'bg-rose-500');
         };
 
         function formatRp(n) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n); }
