@@ -57,6 +57,10 @@
                     </button>
                 </form>
             </div>
+
+            <div class="mt-4 text-center">
+                <button onclick="clearSession()" class="text-xs text-gray-400 underline">Reset Sesi Lokal</button>
+            </div>
             
             <div id="setup-warning" class="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-800 hidden">
                 <strong>Setup Supabase Diperlukan!</strong><br>
@@ -164,9 +168,8 @@
                 </div>
             </div>
 
-            <!-- MUTATION, SUMMARY, ADD, DATA VIEWS (Sama seperti sebelumnya, disesuaikan) -->
+            <!-- MUTATION, SUMMARY, ADD, DATA VIEWS -->
             <div id="view-mutation" class="hidden fade-in pb-20">
-                 <!-- Konten Mutasi (Sama dengan sebelumnya) -->
                  <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-bold text-gray-800">Mutasi</h2>
                     <button onclick="switchTab('dashboard')" class="text-sm text-indigo-600 bg-indigo-50 px-3 py-1 rounded">Tutup</button>
@@ -189,7 +192,6 @@
             </div>
 
             <div id="view-summary" class="hidden fade-in pb-20">
-                <!-- Konten Summary (Sama) -->
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-bold text-gray-800">Rekapan</h2>
                     <button onclick="switchTab('dashboard')" class="text-sm text-indigo-600 bg-indigo-50 px-3 py-1 rounded">Tutup</button>
@@ -303,20 +305,20 @@
     <script>
         // --- KONFIGURASI SUPABASE ---
         // Masukkan URL dan Key dari Dashboard Supabase Anda
-        const SUPABASE_URL = 'https://iqgptgsjbkcnydgsftys.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxZ3B0Z3NqYmtjbnlkZ3NmdHlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzMjQzMTcsImV4cCI6MjA4NDkwMDMxN30.ldj4lzCqQ7hBgkqTkwGK4KsxqEITHeq9SZOrQ1p01Ek';
+        var SUPABASE_URL = 'https://iqgptgsjbkcnydgsftys.supabase.co';
+        var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxZ3B0Z3NqYmtjbnlkZ3NmdHlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzMjQzMTcsImV4cCI6MjA4NDkwMDMxN30.ldj4lzCqQ7hBgkqTkwGK4KsxqEITHeq9SZOrQ1p01Ek';
         // ----------------------------
 
-        let supabase;
-        let currentUser = null;
-        let appData = { accounts: [], categories: [], transactions: [] };
-        let selectedTransactionId = null;
+        var supabaseClient;
+        var currentUser = null;
+        var appData = { accounts: [], categories: [], transactions: [] };
+        var selectedTransactionId = null;
 
         // Init Check
         if (SUPABASE_URL.includes("MASUKKAN")) {
             document.getElementById('setup-warning').classList.remove('hidden');
         } else {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             // Cek session login sederhana (localStorage)
             const savedUser = localStorage.getItem('keuanganku_user');
             if(savedUser) {
@@ -329,7 +331,7 @@
 
         async function handleLogin(e) {
             e.preventDefault();
-            if(!supabase) return;
+            if(!supabaseClient) return;
 
             const u = document.getElementById('login-username').value;
             const p = document.getElementById('login-password').value;
@@ -341,7 +343,7 @@
 
             try {
                 // Login Custom: Cek tabel 'users' manual
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('users')
                     .select('id, username, role')
                     .eq('username', u)
@@ -382,18 +384,23 @@
 
         function handleLogout() {
             if(confirm("Keluar dari aplikasi?")) {
-                localStorage.removeItem('keuanganku_user');
-                location.reload();
+                clearSession();
             }
+        }
+        
+        function clearSession() {
+            localStorage.removeItem('keuanganku_user');
+            location.reload();
         }
 
         // --- DATA CRUD ---
 
         async function loadData() {
+            if (!currentUser) return;
             const sync = document.getElementById('sync-indicator');
             if(sync) sync.innerHTML = '<i class="fas fa-sync fa-spin mr-1"></i> Loading...';
 
-            const { data, error } = await supabase
+            const { data, error } = await supabaseClient
                 .from('users')
                 .select('data')
                 .eq('id', currentUser.id)
@@ -413,16 +420,35 @@
         }
 
         async function saveData() {
+            if (!currentUser) {
+                showToast("Sesi habis, silakan login ulang");
+                return;
+            }
+
             const sync = document.getElementById('sync-indicator');
             if(sync) sync.innerHTML = '<i class="fas fa-sync fa-spin mr-1"></i> Saving...';
 
-            const { error } = await supabase
+            // Debug untuk melihat data yang akan dikirim
+            console.log("Saving data for user:", currentUser.id, appData);
+
+            const { error } = await supabaseClient
                 .from('users')
                 .update({ data: appData })
                 .eq('id', currentUser.id);
 
-            if(error) showToast("Gagal menyimpan!");
-            else if(sync) sync.innerHTML = '<i class="fas fa-circle text-green-400 text-[6px] mr-1"></i> Online';
+            if(error) {
+                console.error("Save Error:", error);
+                // Menampilkan error detail ke user
+                let msg = error.message;
+                if(msg.includes("violates row-level security policy")) {
+                    msg = "Gagal Simpan: Izin Ditolak (Cek Policy RLS)";
+                }
+                showToast(msg);
+                if(sync) sync.innerHTML = '<i class="fas fa-exclamation-circle text-red-500 text-[6px] mr-1"></i> Error';
+            }
+            else if(sync) {
+                sync.innerHTML = '<i class="fas fa-circle text-green-400 text-[6px] mr-1"></i> Online';
+            }
         }
 
         // --- ADMIN FUNCTIONS ---
@@ -436,7 +462,7 @@
             const p = document.getElementById('new-user-pass').value;
             const emptyData = { accounts: [], categories: [], transactions: [] };
 
-            const { error } = await supabase
+            const { error } = await supabaseClient
                 .from('users')
                 .insert({ username: u, password: p, role: r, data: emptyData });
 
@@ -453,7 +479,7 @@
             const list = document.getElementById('admin-user-list');
             list.innerHTML = '<p class="text-xs text-gray-500">Memuat...</p>';
 
-            const { data, error } = await supabase
+            const { data, error } = await supabaseClient
                 .from('users')
                 .select('id, username, role')
                 .order('id', { ascending: true });
@@ -479,8 +505,8 @@
 
         window.deleteUser = async (id) => {
             if(confirm("Hapus user ini permanen? Data mereka akan hilang.")) {
-                const { error } = await supabase.from('users').delete().eq('id', id);
-                if(error) alert("Gagal hapus");
+                const { error } = await supabaseClient.from('users').delete().eq('id', id);
+                if(error) alert("Gagal hapus: " + error.message);
                 else loadAdminUserList();
             }
         }
