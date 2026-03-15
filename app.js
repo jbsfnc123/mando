@@ -1,340 +1,176 @@
 const STORAGE_KEY = 'predictor_history_v3';
-const SESSION_KEY = 'predictor_admin_session_v1';
-
+const LOGIN_KEY = 'predictor_admin_login';
 let history = [];
 let lastPrediction = null;
-let currentContextSnapshot = null;
-let latestModel = createEmptyModel();
+let featureStats = null;
 
-function createEmptyModel() {
-  return {
-    totals: { left: 0, right: 0, draw: 0 },
-    resultN1: {},
-    resultN2: {},
-    resultN3: {},
-    parity1: {},
-    parity2: {},
-    diff1: {},
-    diff2: {},
-    combo1: {},
-    combo2: {},
-    missMemory: {}
-  };
+const el = id => document.getElementById(id);
+
+function showToast(msg, type = 'info') {
+  const t = el('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 2200);
 }
 
-function ensureSession() {
-  const session = localStorage.getItem(SESSION_KEY);
-  const appShell = document.getElementById('appShell');
-  const loginScreen = document.getElementById('loginScreen');
-  const loginUser = document.getElementById('loginUser');
-
-  if (session) {
-    const parsed = JSON.parse(session);
-    if (parsed?.username) {
-      loginScreen.style.display = 'none';
-      appShell.style.display = 'block';
-      document.getElementById('activeUser').textContent = parsed.username;
-      return;
-    }
-  }
-
-  loginScreen.style.display = 'flex';
-  appShell.style.display = 'none';
-  setTimeout(() => loginUser.focus(), 50);
-}
-
-function bindAuth() {
-  const form = document.getElementById('loginForm');
-  const msg = document.getElementById('loginMsg');
-
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const username = document.getElementById('loginUser').value.trim();
-    const password = document.getElementById('loginPass').value;
-
-    const matched = (window.AUTH_USERS || []).find(
-      (u) => u.username === username && u.password === password
-    );
-
-    if (!matched) {
-      msg.textContent = 'Username atau password salah.';
-      return;
-    }
-
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ username: matched.username, role: matched.role }));
-    msg.textContent = '';
-    ensureSession();
-  });
-
-  document.getElementById('logoutBtn').addEventListener('click', () => {
-    localStorage.removeItem(SESSION_KEY);
-    ensureSession();
-  });
-}
+function label(o) { return o === 'left' ? 'KIRI' : o === 'right' ? 'KANAN' : 'SERI'; }
+function pct(p) { return Math.round((p || 0) * 100) + '%'; }
+function parity(n) { return n % 2 === 0 ? 'E' : 'O'; }
+function diffBucket(d) { return d === 0 ? '0' : d <= 2 ? '1-2' : d <= 4 ? '3-4' : d <= 6 ? '5-6' : '7-9'; }
+function resultFrom(l, r) { return l > r ? 'left' : r > l ? 'right' : 'draw'; }
 
 function loadHistory() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     history = raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    history = [];
+  } catch { history = []; }
+}
+function saveHistory() { localStorage.setItem(STORAGE_KEY, JSON.stringify(history)); }
+
+function comboKey(l, r) { return `${l}-${r}`; }
+function pairKey(entry) { return `${entry.left}-${entry.right}`; }
+
+function contextKey(entry, prev, prev2) {
+  const diff = Math.abs(entry.left - entry.right);
+  const sign = entry.left === entry.right ? 'D' : entry.left > entry.right ? 'L' : 'R';
+  const pair = `${parity(entry.left)}${parity(entry.right)}`;
+  const prevRes = prev ? prev.result : 'none';
+  const prev2Res = prev2 ? prev2.result : 'none';
+  const diffTrend = !prev ? 'na' : diff === Math.abs(prev.left - prev.right) ? 'flat' : diff > Math.abs(prev.left - prev.right) ? 'up' : 'down';
+  return [pair, diffBucket(diff), sign, prevRes, prev2Res, diffTrend].join('|');
+}
+
+function detectRunType(seq) {
+  if (seq.length < 2) return 'none';
+  const last = seq[seq.length - 1];
+  const prev = seq[seq.length - 2];
+  if (last === prev) {
+    let len = 2;
+    for (let i = seq.length - 3; i >= 0; i--) {
+      if (seq[i] === last) len++; else break;
+    }
+    return `streak:${last}:${len}`;
   }
+  let alternating = true;
+  for (let i = seq.length - 1; i >= Math.max(1, seq.length - 5); i--) {
+    if (seq[i] === seq[i - 1]) { alternating = false; break; }
+  }
+  if (alternating) return `alternate:${prev}->${last}`;
+  return 'mixed';
 }
 
-function saveHistory() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
-}
-
-function normalizeOutcome(left, right) {
-  if (left > right) return 'left';
-  if (right > left) return 'right';
-  return 'draw';
-}
-
-function label(o) {
-  if (o === 'left') return 'KIRI';
-  if (o === 'right') return 'KANAN';
-  return 'SERI';
-}
-
-function pct(v) {
-  return Math.round(v * 100) + '%';
-}
-
-function parityDigit(v) {
-  return v % 2 === 0 ? 'E' : 'O';
-}
-
-function pairParity(left, right) {
-  return `${parityDigit(left)}${parityDigit(right)}`;
-}
-
-function diffBand(left, right) {
-  const d = Math.abs(left - right);
-  if (d === 0) return 'D0';
-  if (d === 1) return 'D1';
-  if (d <= 3) return 'D2_3';
-  if (d <= 5) return 'D4_5';
-  return 'D6_9';
-}
-
-function diffTrend(prevDiff, currDiff) {
-  if (currDiff > prevDiff) return 'UP';
-  if (currDiff < prevDiff) return 'DOWN';
-  return 'FLAT';
-}
-
-function getResultSeq() {
-  return history.map((r) => r.result);
-}
-
-function incrementMap(map, key, outcome) {
-  if (!key) return;
-  if (!map[key]) map[key] = { left: 0, right: 0, draw: 0, total: 0 };
-  map[key][outcome] += 1;
-  map[key].total += 1;
-}
-
-function getTopOutcome(counts) {
-  if (!counts || !counts.total) return null;
-  const sorted = ['left', 'right', 'draw']
-    .map((k) => [k, counts[k]])
-    .sort((a, b) => b[1] - a[1]);
-  const top = sorted[0];
-  return {
-    outcome: top[0],
-    prob: top[1] / counts.total,
-    total: counts.total,
-    spread: top[1] - sorted[1][1]
+function buildFeatureStats() {
+  const stats = {
+    comboNext: {},
+    contextNext: {},
+    missPenalty: {},
+    runNext: {},
+    nextAfterResult: {},
+    overall: { left: 0, right: 0, draw: 0 }
   };
-}
-
-function getContextAt(index) {
-  if (index <= 0 || index > history.length) return null;
-  const prev = history[index - 1];
-  const prev2 = history[index - 2] || null;
-  const prev3 = history[index - 3] || null;
-  const prevDiff = Math.abs(prev.left - prev.right);
-  const prevParity = pairParity(prev.left, prev.right);
-  const prevTrend = prev2 ? diffTrend(Math.abs(prev2.left - prev2.right), prevDiff) : 'NA';
-
-  return {
-    result1: prev.result,
-    result2: prev2 ? `${prev2.result}>${prev.result}` : null,
-    result3: prev3 ? `${prev3.result}>${prev2.result}>${prev.result}` : null,
-    parity1: prevParity,
-    parity2: prev2 ? `${pairParity(prev2.left, prev2.right)}>${prevParity}` : null,
-    diff1: `${diffBand(prev.left, prev.right)}|${prevTrend}`,
-    diff2: prev2
-      ? `${diffBand(prev2.left, prev2.right)}>${diffBand(prev.left, prev.right)}|${prevTrend}`
-      : null,
-    combo1: `${prev.result}|${prevParity}|${diffBand(prev.left, prev.right)}|${prevTrend}`,
-    combo2: prev2
-      ? `${prev2.result}>${prev.result}|${pairParity(prev2.left, prev2.right)}>${prevParity}|${diffBand(prev2.left, prev2.right)}>${diffBand(prev.left, prev.right)}`
-      : null,
-    prevWinnerParity: prev.result === 'draw'
-      ? 'DRAW'
-      : prev.result === 'left'
-        ? parityDigit(prev.left)
-        : parityDigit(prev.right)
-  };
-}
-
-function rebuildModel() {
-  latestModel = createEmptyModel();
-
-  history.forEach((row) => {
-    latestModel.totals[row.result] += 1;
-  });
-
-  for (let i = 1; i < history.length; i++) {
-    const ctx = getContextAt(i);
-    const actual = history[i].result;
-
-    incrementMap(latestModel.resultN1, ctx.result1, actual);
-    incrementMap(latestModel.resultN2, ctx.result2, actual);
-    incrementMap(latestModel.resultN3, ctx.result3, actual);
-    incrementMap(latestModel.parity1, ctx.parity1, actual);
-    incrementMap(latestModel.parity2, ctx.parity2, actual);
-    incrementMap(latestModel.diff1, ctx.diff1, actual);
-    incrementMap(latestModel.diff2, ctx.diff2, actual);
-    incrementMap(latestModel.combo1, ctx.combo1, actual);
-    incrementMap(latestModel.combo2, ctx.combo2, actual);
-
-    if (history[i].prediction && history[i].prediction !== '—' && history[i].prediction !== actual) {
-      const missKey = history[i].contextKey || ctx.combo2 || ctx.combo1;
-      if (!latestModel.missMemory[missKey]) {
-        latestModel.missMemory[missKey] = { left: 0, right: 0, draw: 0, wrong: {} };
-      }
-      latestModel.missMemory[missKey][actual] += 1;
-      latestModel.missMemory[missKey].wrong[history[i].prediction] =
-        (latestModel.missMemory[missKey].wrong[history[i].prediction] || 0) + 1;
+  history.forEach(h => stats.overall[h.result]++);
+  for (let i = 0; i < history.length - 1; i++) {
+    const curr = history[i];
+    const next = history[i + 1].result;
+    const prev = i > 0 ? history[i - 1] : null;
+    const prev2 = i > 1 ? history[i - 2] : null;
+    const ck = comboKey(curr.left, curr.right);
+    const xk = contextKey(curr, prev, prev2);
+    const rk = detectRunType(history.slice(0, i + 1).map(r => r.result));
+    const nk = curr.result;
+    for (const [store, key] of [[stats.comboNext, ck], [stats.contextNext, xk], [stats.runNext, rk], [stats.nextAfterResult, nk]]) {
+      store[key] ||= { left: 0, right: 0, draw: 0, total: 0 };
+      store[key][next]++;
+      store[key].total++;
+    }
+    if (curr.prediction && curr.prediction !== '—' && curr.prediction !== curr.result) {
+      stats.missPenalty[xk] ||= { left: 0, right: 0, draw: 0, total: 0 };
+      stats.missPenalty[xk][curr.prediction]++;
+      stats.missPenalty[xk].total++;
     }
   }
+  return stats;
 }
 
-function addVote(votes, outcome, weight) {
-  if (!outcome || !weight) return;
-  votes[outcome] += weight;
-}
-
-function streakInfo(seq) {
-  if (!seq.length) return null;
-  const last = seq[seq.length - 1];
-  let len = 1;
-  for (let i = seq.length - 2; i >= 0; i--) {
-    if (seq[i] === last) len += 1;
-    else break;
-  }
-  return { outcome: last, length: len };
-}
-
-function getSnapshotForNextPrediction() {
-  if (history.length < 1) return null;
-  const ctx = getContextAt(history.length);
-  return {
-    ...ctx,
-    missKey: ctx.combo2 || ctx.combo1,
-    lastResult: history[history.length - 1].result
-  };
+function applyWeightedVotes(votes, source, weight, reasons, text, minTotal = 1) {
+  if (!source || source.total < minTotal) return;
+  ['left','right','draw'].forEach(k => votes[k] += weight * (source[k] / source.total));
+  const top = ['left','right','draw'].sort((a,b)=>source[b]-source[a])[0];
+  reasons.push(`${text} → ${label(top)} (${pct(source[top]/source.total)})`);
 }
 
 function predict() {
-  if (history.length < 3) {
-    currentContextSnapshot = null;
-    return null;
-  }
-
-  const ctx = getSnapshotForNextPrediction();
-  currentContextSnapshot = ctx;
+  if (history.length < 3) return null;
+  featureStats = buildFeatureStats();
+  const curr = history[history.length - 1];
+  const prev = history[history.length - 2] || null;
+  const prev2 = history[history.length - 3] || null;
   const votes = { left: 0, right: 0, draw: 0 };
   const reasons = [];
 
-  const collectors = [
-    { map: latestModel.combo2, key: ctx.combo2, weight: 3.4, min: 2, label: 'Konteks-2 ronde' },
-    { map: latestModel.combo1, key: ctx.combo1, weight: 3.0, min: 2, label: 'Konteks 1 ronde' },
-    { map: latestModel.resultN3, key: ctx.result3, weight: 2.5, min: 2, label: 'Pola hasil 3' },
-    { map: latestModel.resultN2, key: ctx.result2, weight: 2.1, min: 2, label: 'Pola hasil 2' },
-    { map: latestModel.parity2, key: ctx.parity2, weight: 1.8, min: 2, label: 'Pola ganjil/genap 2' },
-    { map: latestModel.parity1, key: ctx.parity1, weight: 1.3, min: 3, label: 'Ganjil/genap terakhir' },
-    { map: latestModel.diff2, key: ctx.diff2, weight: 1.8, min: 2, label: 'Pola selisih 2' },
-    { map: latestModel.diff1, key: ctx.diff1, weight: 1.4, min: 3, label: 'Selisih terakhir' },
-    { map: latestModel.resultN1, key: ctx.result1, weight: 1.0, min: 3, label: 'Transisi dasar' }
-  ];
+  const ck = comboKey(curr.left, curr.right);
+  const xk = contextKey(curr, prev, prev2);
+  const rk = detectRunType(history.map(r => r.result));
+  const nk = curr.result;
 
-  collectors.forEach((item) => {
-    const res = getTopOutcome(item.map[item.key]);
-    if (!res || res.total < item.min) return;
-    const weight = item.weight * (0.55 + res.prob * 0.75) * (1 + Math.min(res.spread, 4) * 0.06);
-    addVote(votes, res.outcome, weight);
-    reasons.push(`${item.label} → ${label(res.outcome)} (${pct(res.prob)})`);
-  });
+  applyWeightedVotes(votes, featureStats.comboNext[ck], 3.8, reasons, `Kombinasi ${ck}`, 2);
+  applyWeightedVotes(votes, featureStats.contextNext[xk], 3.2, reasons, `Konteks angka/pola`, 2);
+  applyWeightedVotes(votes, featureStats.runNext[rk], 2.6, reasons, `Pola run`, 2);
+  applyWeightedVotes(votes, featureStats.nextAfterResult[nk], 1.7, reasons, `Lanjutan hasil ${label(nk)}`, 2);
 
-  const seq = getResultSeq();
-  const streak = streakInfo(seq);
-  if (streak) {
-    if (streak.length >= 4) {
-      const opposite = streak.outcome === 'left' ? 'right' : streak.outcome === 'right' ? 'left' : 'draw';
-      addVote(votes, opposite, 1.4 + Math.min(1.2, streak.length * 0.15));
-      reasons.push(`Streak ${streak.length}x ${label(streak.outcome)} → potensi break ke ${label(opposite)}`);
+  const seq = history.map(r => r.result);
+  const streakType = detectRunType(seq);
+  if (streakType.startsWith('streak:')) {
+    const [, outcome, lenStr] = streakType.split(':');
+    const len = Number(lenStr);
+    if (len >= 3) {
+      if (outcome === 'left') votes.right += 1.15;
+      else if (outcome === 'right') votes.left += 1.15;
+      else votes.draw += .8;
+      reasons.push(`Kemenangan beruntun ${len}x → potensi patah pola`);
     } else {
-      addVote(votes, streak.outcome, 0.8 + streak.length * 0.2);
-      reasons.push(`Streak ${streak.length}x → cenderung lanjut ${label(streak.outcome)}`);
+      votes[outcome] += .9;
+      reasons.push(`Streak ${len}x → potensi lanjut`);
     }
+  } else if (streakType.startsWith('alternate:')) {
+    const [, chain] = streakType.split(':');
+    const [a,b] = chain.split('->');
+    votes[a] += 1.1;
+    reasons.push(`Selang-seling ${label(a)} ↔ ${label(b)} → condong balik ke ${label(a)}`);
   }
 
-  const totals = latestModel.totals;
-  const totalRounds = totals.left + totals.right + totals.draw;
-  if (totalRounds > 0) {
-    ['left', 'right', 'draw'].forEach((outcome) => {
-      addVote(votes, outcome, (totals[outcome] / totalRounds) * 0.8);
-    });
+  const penalty = featureStats.missPenalty[xk];
+  if (penalty && penalty.total >= 2) {
+    ['left','right','draw'].forEach(k => votes[k] -= 1.5 * (penalty[k] / penalty.total));
+    reasons.push('Koreksi dari konteks prediksi yang sering meleset');
   }
 
-  const miss = latestModel.missMemory[ctx.missKey];
-  if (miss) {
-    const wrongTotal = (miss.left || 0) + (miss.right || 0) + (miss.draw || 0);
-    if (wrongTotal > 0) {
-      ['left', 'right', 'draw'].forEach((outcome) => {
-        addVote(votes, outcome, (miss[outcome] / wrongTotal) * 2.6);
-      });
-      reasons.push(`Koreksi miss historis → ${label(getTopOutcome({ ...miss, total: wrongTotal }).outcome)}`);
-    }
-  }
+  const totalOverall = Object.values(featureStats.overall).reduce((a,b)=>a+b,0) || 1;
+  ['left','right','draw'].forEach(k => votes[k] += 0.5 * (featureStats.overall[k] / totalOverall));
 
-  const ordered = Object.entries(votes).sort((a, b) => b[1] - a[1]);
-  const totalVote = ordered.reduce((sum, [, val]) => sum + val, 0) || 1;
-  const winner = ordered[0][0];
-  const confidence = Math.max(0.36, Math.min(0.96, ordered[0][1] / totalVote));
-
-  return {
-    outcome: winner,
-    confidence,
-    reasons: reasons.slice(0, 4),
-    contextKey: ctx.missKey
-  };
+  const entries = Object.entries(votes).sort((a,b)=>b[1]-a[1]);
+  const sum = Math.max(0.001, entries.reduce((s,[,v])=>s+Math.max(0,v),0));
+  const winner = entries[0][0];
+  const conf = Math.max(0.35, Math.min(0.95, Math.max(0, entries[0][1]) / sum));
+  return { outcome: winner, confidence: conf, reasons: reasons.slice(0,4) };
 }
 
 function updatePrediction() {
   const pred = predict();
   lastPrediction = pred;
-
-  const banner = document.getElementById('predBanner');
-  const predText = document.getElementById('predText');
-  const predReason = document.getElementById('predReason');
-  const predConf = document.getElementById('predConf');
-
+  const banner = el('predBanner');
+  const predText = el('predText');
+  const predReason = el('predReason');
+  const predConf = el('predConf');
   banner.className = 'prediction-banner';
-
   if (!pred) {
     banner.classList.add('pred-none');
     predText.className = 'pred-main none';
-    predText.textContent = '— Menunggu Pola';
-    predReason.textContent = `Minimal 3 ronde. Saat ini ${history.length} ronde tersedia.`;
+    predText.textContent = '— Menganalisis...';
+    predReason.textContent = `Butuh minimal 3 ronde. Sudah ada ${history.length}.`;
     predConf.textContent = '—';
     return;
   }
-
   banner.classList.add('pred-' + pred.outcome);
   predText.className = 'pred-main ' + pred.outcome;
   predText.textContent = '▶ ' + label(pred.outcome);
@@ -343,339 +179,155 @@ function updatePrediction() {
 }
 
 function updateStats() {
-  const leftW = history.filter((r) => r.result === 'left').length;
-  const rightW = history.filter((r) => r.result === 'right').length;
-  const drawW = history.filter((r) => r.result === 'draw').length;
+  const leftW = history.filter(r => r.result === 'left').length;
+  const rightW = history.filter(r => r.result === 'right').length;
+  const drawW = history.filter(r => r.result === 'draw').length;
   const total = history.length;
-
-  document.getElementById('statLeft').textContent = leftW;
-  document.getElementById('statRight').textContent = rightW;
-  document.getElementById('statDraw').textContent = drawW;
-
-  const withPred = history.filter((r) => r.prediction && r.prediction !== '—');
-  if (withPred.length > 0) {
-    const correct = withPred.filter((r) => r.prediction === r.result).length;
-    document.getElementById('statAcc').textContent = pct(correct / withPred.length);
-  } else {
-    document.getElementById('statAcc').textContent = '—';
-  }
-
-  if (total > 0) {
-    const lp = ((leftW / total) * 100).toFixed(1);
-    const rp = ((rightW / total) * 100).toFixed(1);
-    const dp = ((drawW / total) * 100).toFixed(1);
-    document.getElementById('barLeft').style.width = lp + '%';
-    document.getElementById('barRight').style.width = rp + '%';
-    document.getElementById('barDraw').style.width = dp + '%';
-    document.getElementById('labelLeft').textContent = `KIRI ${lp}%`;
-    document.getElementById('labelRight').textContent = `KANAN ${rp}%`;
-    document.getElementById('labelDraw').textContent = `SERI ${dp}%`;
-  } else {
-    document.getElementById('barLeft').style.width = '0%';
-    document.getElementById('barRight').style.width = '0%';
-    document.getElementById('barDraw').style.width = '0%';
-    document.getElementById('labelLeft').textContent = 'KIRI 0%';
-    document.getElementById('labelRight').textContent = 'KANAN 0%';
-    document.getElementById('labelDraw').textContent = 'SERI 0%';
-  }
+  el('statLeft').textContent = leftW;
+  el('statRight').textContent = rightW;
+  el('statDraw').textContent = drawW;
+  const withPred = history.filter(r => r.prediction && r.prediction !== '—');
+  el('statAcc').textContent = withPred.length ? pct(withPred.filter(r => r.prediction === r.result).length / withPred.length) : '—';
+  const lp = total ? (leftW / total * 100).toFixed(1) : 0;
+  const rp = total ? (rightW / total * 100).toFixed(1) : 0;
+  const dp = total ? (drawW / total * 100).toFixed(1) : 0;
+  el('barLeft').style.width = lp + '%';
+  el('barRight').style.width = rp + '%';
+  el('barDraw').style.width = dp + '%';
+  el('labelLeft').textContent = `KIRI ${lp}%`;
+  el('labelRight').textContent = `KANAN ${rp}%`;
+  el('labelDraw').textContent = `SERI ${dp}%`;
 }
 
 function updateTable() {
-  const tbody = document.getElementById('histTbody');
-  const empty = document.getElementById('emptyMsg');
-  const table = document.getElementById('histTable');
-
-  if (history.length === 0) {
-    empty.style.display = 'block';
-    table.style.display = 'none';
-    tbody.innerHTML = '';
-    return;
-  }
-
-  empty.style.display = 'none';
-  table.style.display = 'table';
-  tbody.innerHTML = '';
-
+  const tbody = el('histTbody');
+  const empty = el('emptyMsg');
+  const table = el('histTable');
+  if (!history.length) { empty.style.display = 'block'; table.style.display = 'none'; return; }
+  empty.style.display = 'none'; table.style.display = 'table'; tbody.innerHTML = '';
   [...history].reverse().forEach((row, idx) => {
     const tr = document.createElement('tr');
-    if (idx === 0) tr.className = 'row-new';
-
     const resultTag = `<span class="tag ${row.result}">${label(row.result)}</span>`;
-    const predTag = row.prediction && row.prediction !== '—'
-      ? `<span class="tag ${row.prediction}">${label(row.prediction)}</span>`
-      : `<span style="color:var(--dim);font-size:0.65rem">—</span>`;
-    const correct = row.prediction && row.prediction !== '—'
-      ? (row.prediction === row.result ? '<span class="correct-badge">✓</span>' : '<span class="wrong-badge">✗</span>')
-      : '';
-
-    tr.innerHTML = `
-      <td style="color:var(--dim)">${history.length - idx}</td>
-      <td style="color:var(--blue);font-family:'Orbitron',sans-serif;font-weight:700">${row.left}</td>
-      <td style="color:var(--red);font-family:'Orbitron',sans-serif;font-weight:700">${row.right}</td>
-      <td>${resultTag}</td>
-      <td>${predTag}</td>
-      <td>${correct}</td>
-    `;
+    const predTag = row.prediction && row.prediction !== '—' ? `<span class="tag ${row.prediction}">${label(row.prediction)}</span>` : `<span style="color:var(--dim)">—</span>`;
+    const correct = row.prediction && row.prediction !== '—' ? (row.prediction === row.result ? '✓' : '✗') : '';
+    tr.innerHTML = `<td style="color:var(--dim)">${history.length - idx}</td><td style="color:var(--blue);font-family:'Orbitron',sans-serif;font-weight:700">${row.left}</td><td style="color:var(--red);font-family:'Orbitron',sans-serif;font-weight:700">${row.right}</td><td>${resultTag}</td><td>${predTag}</td><td>${correct}</td>`;
     tbody.appendChild(tr);
   });
 }
 
-function buildRoadColumns() {
-  const columns = [];
-  let currentCol = -1;
-  let currentRow = 0;
-  let previous = null;
-
-  history.forEach((item) => {
-    if (previous === null) {
-      currentCol = 0;
-      currentRow = 0;
-    } else if (item.result === previous) {
-      currentRow += 1;
-    } else {
-      currentCol += 1;
-      currentRow = 0;
-    }
-
-    if (!columns[currentCol]) columns[currentCol] = [];
-    columns[currentCol][currentRow] = item.result;
-    previous = item.result;
-  });
-
-  return columns;
+function buildWinnerColumns(results) {
+  if (!results.length) return [];
+  const cols = [];
+  let current = { winner: results[0], items: [results[0]] };
+  for (let i = 1; i < results.length; i++) {
+    if (results[i] === current.winner) current.items.push(results[i]);
+    else { cols.push(current); current = { winner: results[i], items: [results[i]] }; }
+  }
+  cols.push(current);
+  return cols.slice(-20);
 }
 
-function updateRoadmap() {
-  const wrap = document.getElementById('roadmapGrid');
-  wrap.innerHTML = '';
-
-  if (!history.length) {
-    wrap.innerHTML = '<div class="roadmap-empty">Belum ada data untuk divisualisasikan.</div>';
-    return;
-  }
-
-  const columns = buildRoadColumns();
-  const maxRows = Math.max(...columns.map((c) => c.length));
-  wrap.style.gridTemplateColumns = `repeat(${columns.length}, 26px)`;
-
-  for (let row = 0; row < maxRows; row++) {
-    for (let col = 0; col < columns.length; col++) {
+function updateWinnerViz() {
+  const grid = el('winnerGrid');
+  grid.innerHTML = '';
+  const cols = buildWinnerColumns(history.map(r => r.result));
+  cols.forEach(col => {
+    const c = document.createElement('div');
+    c.className = 'winner-col';
+    for (let i = 0; i < 20; i++) {
       const cell = document.createElement('div');
-      cell.className = 'road-cell';
-      const value = columns[col]?.[row];
-      if (value) {
-        cell.classList.add(value);
-        cell.textContent = value === 'left' ? 'L' : value === 'right' ? 'R' : 'D';
-        cell.title = label(value);
+      if (i < col.items.length && i < 20) {
+        cell.className = `winner-cell ${col.winner}`;
+        cell.textContent = col.winner === 'left' ? 'L' : col.winner === 'right' ? 'R' : 'D';
       } else {
-        cell.classList.add('empty');
+        cell.className = 'winner-empty';
       }
-      wrap.appendChild(cell);
+      c.appendChild(cell);
     }
-  }
+    grid.appendChild(c);
+  });
 }
 
-function refreshAll() {
-  rebuildModel();
-  updateStats();
-  updatePrediction();
-  updateTable();
-  updateRoadmap();
-}
+function refreshAll() { updateStats(); updatePrediction(); updateTable(); updateWinnerViz(); }
 
-function submitRound() {
-  const lv = document.getElementById('inputLeft').value.trim();
-  const rv = document.getElementById('inputRight').value.trim();
-
-  if (lv === '' || rv === '') {
-    showToast('Isi kedua angka terlebih dahulu!', 'info');
-    return;
-  }
-
-  const left = parseInt(lv, 10);
-  const right = parseInt(rv, 10);
-
-  if (Number.isNaN(left) || Number.isNaN(right) || left < 0 || left > 9 || right < 0 || right > 9) {
-    showToast('Angka harus antara 0 dan 9.', 'info');
-    return;
-  }
-
-  document.getElementById('dispLeft').textContent = left;
-  document.getElementById('dispRight').textContent = right;
-
-  const result = normalizeOutcome(left, right);
+function addRound(l, r) {
+  const result = resultFrom(l, r);
   const prediction = lastPrediction ? lastPrediction.outcome : '—';
-  const entry = {
-    left,
-    right,
-    result,
-    prediction,
-    ts: Date.now(),
-    contextKey: lastPrediction?.contextKey || currentContextSnapshot?.missKey || null,
-    feature: {
-      parity: pairParity(left, right),
-      diffBand: diffBand(left, right)
-    }
-  };
-
-  history.push(entry);
+  history.push({ left: l, right: r, result, prediction, ts: Date.now() });
   saveHistory();
-
-  if (prediction !== '—') {
-    showToast(prediction === result ? '✓ Prediksi tepat' : '✗ Prediksi meleset', prediction === result ? 'win' : 'info');
-  }
-
-  document.getElementById('inputLeft').value = '';
-  document.getElementById('inputRight').value = '';
-  document.getElementById('inputLeft').focus();
-
+  if (prediction !== '—') showToast(prediction === result ? '✓ Prediksi Tepat!' : '✗ Prediksi Meleset', prediction === result ? 'win' : 'info');
   refreshAll();
 }
 
-function showToast(msg, type = 'info') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = `toast ${type} show`;
-  setTimeout(() => t.classList.remove('show'), 2200);
-}
-
-function exportCsv() {
-  if (!history.length) {
-    showToast('Tidak ada data untuk di-export.', 'info');
-    return;
+function parseImportText(text) {
+  const rows = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  const parsed = [];
+  for (const row of rows) {
+    if (/kiri|kanan|hasil|prediksi/i.test(row)) continue;
+    const m = row.match(/(\d)\D+(\d)/);
+    if (!m) continue;
+    parsed.push([Number(m[1]), Number(m[2])]);
   }
-
-  const header = ['Ronde', 'Kiri', 'Kanan', 'Hasil', 'Prediksi', 'Tepat', 'Parity', 'DiffBand', 'Timestamp'];
-  const rows = history.map((r, i) => [
-    i + 1,
-    r.left,
-    r.right,
-    label(r.result),
-    r.prediction && r.prediction !== '—' ? label(r.prediction) : '',
-    r.prediction && r.prediction !== '—' ? (r.prediction === r.result ? 'Ya' : 'Tidak') : '',
-    r.feature?.parity || pairParity(r.left, r.right),
-    r.feature?.diffBand || diffBand(r.left, r.right),
-    new Date(r.ts).toLocaleString('id-ID')
-  ]);
-
-  const csv = [header, ...rows]
-    .map((row) => row.map((col) => `"${String(col).replace(/"/g, '""')}"`).join(','))
-    .join('\n');
-
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `predictor_history_${Date.now()}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('CSV berhasil di-export.', 'win');
+  return parsed;
 }
 
-function parseImportedText(text) {
-  const lines = text.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
-  const imported = [];
-
-  lines.forEach((line) => {
-    const clean = line.replace(/;/g, ',');
-    const match = clean.match(/(\d)\s*[,\-|\s]\s*(\d)/);
-    if (match) {
-      imported.push({ left: Number(match[1]), right: Number(match[2]) });
-      return;
-    }
-
-    const cols = clean.split(',').map((c) => c.trim());
-    if (cols.length >= 2) {
-      const left = Number(cols[0]);
-      const right = Number(cols[1]);
-      if (!Number.isNaN(left) && !Number.isNaN(right)) imported.push({ left, right });
-    }
+function setupEvents() {
+  el('submitBtn').addEventListener('click', () => {
+    const lv = el('inputLeft').value.trim(), rv = el('inputRight').value.trim();
+    if (lv === '' || rv === '') return showToast('Isi kedua angka terlebih dahulu!', 'info');
+    const l = parseInt(lv,10), r = parseInt(rv,10);
+    if ([l,r].some(n => Number.isNaN(n) || n < 0 || n > 9)) return showToast('Angka harus antara 0 dan 9!', 'info');
+    el('dispLeft').textContent = l; el('dispRight').textContent = r;
+    el('inputLeft').value = ''; el('inputRight').value = ''; el('inputLeft').focus();
+    addRound(l, r);
   });
-
-  return imported.filter((r) => r.left >= 0 && r.left <= 9 && r.right >= 0 && r.right <= 9);
-}
-
-function importHistoryFromRows(rows) {
-  if (!rows.length) {
-    showToast('Format import tidak dikenali.', 'info');
-    return;
-  }
-
-  history = [];
-  lastPrediction = null;
-  currentContextSnapshot = null;
-  rebuildModel();
-
-  rows.forEach((row, idx) => {
-    if (idx >= 3) {
-      lastPrediction = predict();
-    }
-    const result = normalizeOutcome(row.left, row.right);
-    history.push({
-      left: row.left,
-      right: row.right,
-      result,
-      prediction: lastPrediction ? lastPrediction.outcome : '—',
-      ts: Date.now() + idx,
-      contextKey: lastPrediction?.contextKey || null,
-      feature: {
-        parity: pairParity(row.left, row.right),
-        diffBand: diffBand(row.left, row.right)
-      }
-    });
-    rebuildModel();
+  ['inputLeft','inputRight'].forEach(id => {
+    el(id).addEventListener('input', e => el(id === 'inputLeft' ? 'dispLeft' : 'dispRight').textContent = e.target.value || '–');
+    el(id).addEventListener('keydown', e => { if (e.key === 'Enter') el('submitBtn').click(); });
   });
-
-  saveHistory();
-  refreshAll();
-  showToast(`Import ${rows.length} ronde berhasil.`, 'win');
-}
-
-function bindEvents() {
-  document.getElementById('submitBtn').addEventListener('click', submitRound);
-  document.getElementById('btnExport').addEventListener('click', exportCsv);
-
-  document.getElementById('btnClear').addEventListener('click', () => {
+  el('btnExport').addEventListener('click', () => {
+    if (!history.length) return showToast('Tidak ada data untuk di-export.', 'info');
+    const header = ['Ronde','Kiri','Kanan','Hasil','Prediksi','Tepat','Timestamp'];
+    const rows = history.map((r,i)=>[i+1,r.left,r.right,label(r.result),r.prediction && r.prediction !== '—' ? label(r.prediction) : '',r.prediction && r.prediction !== '—' ? (r.prediction === r.result ? 'Ya' : 'Tidak') : '',new Date(r.ts).toLocaleString('id-ID')]);
+    const csv = [header,...rows].map(row => row.join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `predictor_${Date.now()}.csv`; a.click(); URL.revokeObjectURL(url); showToast('CSV berhasil di-export!', 'win');
+  });
+  el('btnClear').addEventListener('click', () => {
     if (!confirm('Reset semua riwayat?')) return;
-    history = [];
-    lastPrediction = null;
-    currentContextSnapshot = null;
-    saveHistory();
-    refreshAll();
-    showToast('Data berhasil direset.', 'info');
+    history = []; saveHistory(); lastPrediction = null; el('dispLeft').textContent = '–'; el('dispRight').textContent = '–'; refreshAll(); showToast('Data berhasil direset.', 'info');
   });
-
-  ['inputLeft', 'inputRight'].forEach((id) => {
-    const input = document.getElementById(id);
-    input.addEventListener('input', (e) => {
-      const dispId = id === 'inputLeft' ? 'dispLeft' : 'dispRight';
-      document.getElementById(dispId).textContent = e.target.value !== '' ? e.target.value : '–';
-    });
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') submitRound();
-    });
-  });
-
-  document.getElementById('btnImport').addEventListener('click', () => {
-    document.getElementById('importFile').click();
-  });
-
-  document.getElementById('importFile').addEventListener('change', async (e) => {
-    const file = e.target.files?.[0];
+  el('importFile').addEventListener('change', async e => {
+    const file = e.target.files[0];
     if (!file) return;
     const text = await file.text();
-    const rows = parseImportedText(text);
-    importHistoryFromRows(rows);
+    const items = parseImportText(text);
+    if (!items.length) return showToast('Format file tidak dikenali.', 'info');
+    items.forEach(([l,r]) => addRound(l,r));
+    showToast(`${items.length} ronde berhasil di-import`, 'win');
     e.target.value = '';
   });
+  el('btnLogout').addEventListener('click', () => { localStorage.removeItem(LOGIN_KEY); location.reload(); });
 }
 
-function init() {
-  bindAuth();
-  ensureSession();
-  loadHistory();
-  bindEvents();
-  refreshAll();
+function setupLogin() {
+  const logged = localStorage.getItem(LOGIN_KEY) === '1';
+  if (logged) { el('loginOverlay').classList.add('hidden'); el('appRoot').classList.remove('hidden'); return; }
+  const doLogin = () => {
+    const username = el('loginUser').value.trim();
+    const password = el('loginPass').value;
+    const ok = (window.APP_USERS || []).some(u => u.username === username && u.password === password);
+    if (!ok) { el('loginError').textContent = 'Username atau password salah.'; return; }
+    localStorage.setItem(LOGIN_KEY, '1');
+    el('loginOverlay').classList.add('hidden');
+    el('appRoot').classList.remove('hidden');
+    el('loginError').textContent = '';
+  };
+  el('loginBtn').addEventListener('click', doLogin);
+  el('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 }
 
-document.addEventListener('DOMContentLoaded', init);
+loadHistory();
+setupLogin();
+setupEvents();
+refreshAll();
