@@ -1,505 +1,65 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PREDICTOR — Adaptive Engine</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --red: #ff2244;
-      --blue: #0099ff;
-      --gold: #ffd700;
-      --bg: #06080f;
-      --panel: #0c1120;
-      --border: #1a2540;
-      --text: #e0e8ff;
-      --dim: #5e7099;
-      --draw: #a8afd1;
-      --green: #66ff99;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Share Tech Mono', monospace;
-      min-height: 100vh;
-    }
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(0,153,255,0.035) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,153,255,0.035) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 0;
-    }
-    .login-screen {
-      min-height: 100vh;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      position: relative;
-      z-index: 2;
-    }
-    .login-card {
-      width: 100%;
-      max-width: 420px;
-      background: rgba(12,17,32,0.96);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 28px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
-    }
-    .login-card h1 {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.6rem;
-      letter-spacing: .18em;
-      margin-bottom: 10px;
-      background: linear-gradient(135deg, var(--red), #ff9f1a, var(--blue));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-transform: uppercase;
-    }
-    .login-card p {
-      color: var(--dim);
-      font-size: .82rem;
-      margin-bottom: 20px;
-      line-height: 1.6;
-    }
-    .login-card label {
-      display: block;
-      font-size: .72rem;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      color: var(--dim);
-      margin-bottom: 7px;
-    }
-    .login-card input {
-      width: 100%;
-      margin-bottom: 14px;
-      background: rgba(255,255,255,.04);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text);
-      padding: 12px 14px;
-      font-family: inherit;
-      outline: none;
-    }
-    .login-card input:focus { border-color: var(--blue); }
-    .login-card button {
-      width: 100%;
-      background: linear-gradient(135deg, rgba(255,34,68,0.2), rgba(0,153,255,0.22));
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text);
-      padding: 13px;
-      font-family: 'Orbitron', sans-serif;
-      letter-spacing: .14em;
-      cursor: pointer;
-      margin-top: 4px;
-    }
-    .login-hint { color: var(--gold); font-size: .75rem; margin-top: 14px; }
-    .login-msg { color: var(--red); font-size: .75rem; min-height: 18px; margin-top: 8px; }
-
-    .container {
-      position: relative;
-      z-index: 1;
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: 20px;
-      display: none;
-    }
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 20px 0;
-    }
-    .title h1 {
-      font-family: 'Orbitron', sans-serif;
-      font-weight: 900;
-      font-size: clamp(1.6rem, 5vw, 2.8rem);
-      letter-spacing: .2em;
-      background: linear-gradient(135deg, var(--red), #ff8c00, var(--blue));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-transform: uppercase;
-    }
-    .title p {
-      color: var(--dim);
-      font-size: .75rem;
-      letter-spacing: .15em;
-      text-transform: uppercase;
-      margin-top: 6px;
-    }
-    .user-box {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 14px;
-      text-align: right;
-      min-width: 170px;
-    }
-    .user-box .u-label { font-size: .64rem; color: var(--dim); text-transform: uppercase; letter-spacing: .16em; }
-    .user-box .u-name { font-family: 'Orbitron', sans-serif; color: var(--gold); margin: 6px 0 10px; }
-    .user-box button {
-      width: 100%; background: transparent; border: 1px solid var(--border); color: var(--dim);
-      border-radius: 8px; padding: 8px; cursor: pointer; font-family: inherit; font-size: .72rem;
-    }
-    .layout {
-      display: grid;
-      grid-template-columns: 1.2fr .85fr;
-      gap: 18px;
-    }
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 18px;
-    }
-    .prediction-banner {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 20px 24px;
-      margin-bottom: 18px;
-      display: flex;
-      gap: 14px;
-      align-items: center;
-      position: relative;
-      overflow: hidden;
-    }
-    .prediction-banner::before {
-      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
-    }
-    .pred-none::before { background: var(--dim); }
-    .pred-left::before { background: var(--blue); }
-    .pred-right::before { background: var(--red); }
-    .pred-draw::before { background: var(--draw); }
-    .pred-label, .conf-label {
-      font-size: .64rem; letter-spacing: .2em; text-transform: uppercase; color: var(--dim);
-    }
-    .pred-main {
-      font-family: 'Orbitron', sans-serif; font-size: clamp(1.2rem, 2.8vw, 1.8rem); margin: 5px 0 10px;
-    }
-    .pred-main.left { color: var(--blue); }
-    .pred-main.right { color: var(--red); }
-    .pred-main.draw { color: var(--draw); }
-    .pred-main.none { color: var(--dim); }
-    .pred-reason { font-size: .73rem; line-height: 1.6; color: var(--dim); }
-    .pred-confidence { margin-left: auto; text-align: right; }
-    .conf-value { font-family: 'Orbitron', sans-serif; color: var(--gold); font-size: 1.5rem; }
-
-    .arena {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 18px;
-    }
-    .side-panel {
-      background: var(--panel);
-      border-radius: 12px;
-      padding: 20px;
-      text-align: center;
-      border: 1px solid var(--border);
-    }
-    .left-panel:hover { box-shadow: 0 0 24px rgba(0,153,255,.16); border-color: rgba(0,153,255,.4); }
-    .right-panel:hover { box-shadow: 0 0 24px rgba(255,34,68,.16); border-color: rgba(255,34,68,.4); }
-    .side-name {
-      font-family: 'Orbitron', sans-serif; font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; margin-bottom: 12px;
-    }
-    .left-panel .side-name, .left-panel .digit-display { color: var(--blue); }
-    .right-panel .side-name, .right-panel .digit-display { color: var(--red); }
-    .digit-display {
-      font-family: 'Orbitron', sans-serif; font-size: 3.6rem; font-weight: 900; margin-bottom: 16px;
-    }
-    .digit-input {
-      width: 100%; background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 10px;
-      color: var(--text); padding: 12px; text-align: center; font-size: 1.2rem; font-family: 'Orbitron', sans-serif;
-      outline: none; -moz-appearance: textfield;
-    }
-    .digit-input::-webkit-outer-spin-button, .digit-input::-webkit-inner-spin-button { -webkit-appearance: none; }
-    .left-panel .digit-input:focus { border-color: var(--blue); }
-    .right-panel .digit-input:focus { border-color: var(--red); }
-    .vs-badge { font-family: 'Orbitron', sans-serif; color: var(--dim); font-size: 1.1rem; }
-    .submit-btn, .ghost-btn {
-      width: 100%;
-      background: linear-gradient(135deg, rgba(255,34,68,.18), rgba(0,153,255,.18));
-      border: 1px solid var(--border);
-      border-radius: 10px; color: var(--text); font-family: 'Orbitron', sans-serif; cursor: pointer;
-      padding: 14px; letter-spacing: .14em; text-transform: uppercase;
-    }
-    .actions-top { display: grid; grid-template-columns: 1fr 180px; gap: 10px; margin-bottom: 18px; }
-    .ghost-btn { background: transparent; color: var(--dim); }
-
-    .stats-row {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px;
-    }
-    .stat-card {
-      background: rgba(255,255,255,.02);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 10px;
-      text-align: center;
-    }
-    .stat-value { font-family: 'Orbitron', sans-serif; font-size: 1.45rem; margin-bottom: 5px; }
-    .stat-label { font-size: .62rem; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
-    .blue { color: var(--blue); }
-    .red { color: var(--red); }
-    .gold { color: var(--gold); }
-    .dim { color: var(--draw); }
-
-    .rate-bar-wrap { margin-bottom: 18px; }
-    .rate-bar-labels {
-      display: flex; justify-content: space-between; font-size: .65rem; color: var(--dim); margin-bottom: 8px; letter-spacing: .1em;
-    }
-    .rate-bar { height: 12px; background: var(--border); border-radius: 999px; overflow: hidden; display: flex; }
-    .rate-bar-left { background: linear-gradient(90deg, #0077cc, #00ccff); }
-    .rate-bar-draw { background: var(--draw); }
-    .rate-bar-right { background: linear-gradient(90deg, #ff2244, #ff6666); }
-
-    .history-wrap, .road-wrap { overflow: hidden; }
-    .section-title {
-      font-family: 'Orbitron', sans-serif;
-      font-size: .76rem; letter-spacing: .2em; color: var(--dim); text-transform: uppercase;
-      margin-bottom: 14px;
-    }
-    .history-header {
-      display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px;
-    }
-    .actions-row { display: flex; gap: 8px; flex-wrap: wrap; }
-    .btn-export, .btn-clear {
-      background: transparent; border: 1px solid var(--border); color: var(--dim); border-radius: 8px; cursor: pointer;
-      padding: 8px 12px; font-family: inherit; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase;
-    }
-    .btn-export:hover { border-color: var(--gold); color: var(--gold); }
-    .btn-clear:hover { border-color: var(--red); color: var(--red); }
-
-    .history-table { width: 100%; border-collapse: collapse; font-size: .76rem; }
-    .history-table th, .history-table td { text-align: center; padding: 10px 8px; }
-    .history-table th {
-      color: var(--dim); font-size: .6rem; border-bottom: 1px solid var(--border); letter-spacing: .14em; text-transform: uppercase;
-    }
-    .history-table td { border-bottom: 1px solid rgba(255,255,255,.04); }
-    .history-table tr:last-child td { border-bottom: 0; }
-    .history-empty, .roadmap-empty { color: var(--dim); font-size: .76rem; text-align: center; padding: 26px 10px; }
-
-    .tag {
-      display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: .63rem; font-family: 'Orbitron', sans-serif;
-      letter-spacing: .08em; border: 1px solid transparent;
-    }
-    .tag.left { background: rgba(0,153,255,.14); color: var(--blue); border-color: rgba(0,153,255,.28); }
-    .tag.right { background: rgba(255,34,68,.14); color: var(--red); border-color: rgba(255,34,68,.28); }
-    .tag.draw { background: rgba(168,175,209,.12); color: var(--draw); border-color: rgba(168,175,209,.24); }
-    .correct-badge { color: var(--gold); }
-    .wrong-badge { color: var(--dim); }
-
-    .road-legend {
-      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;
-    }
-    .legend-pill {
-      font-size: .68rem; border: 1px solid var(--border); padding: 6px 10px; border-radius: 999px; color: var(--dim);
-    }
-    .roadmap-frame {
-      overflow: auto;
-      border: 1px solid rgba(255,255,255,.04);
-      border-radius: 12px;
-      padding: 10px;
-      min-height: 220px;
-      background: rgba(255,255,255,.02);
-    }
-    .roadmap-grid {
-      display: grid;
-      gap: 6px;
-      align-items: start;
-      justify-content: start;
-    }
-    .road-cell {
-      width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
-      font-family: 'Orbitron', sans-serif; font-size: .7rem; border: 1px solid var(--border);
-    }
-    .road-cell.left { background: rgba(0,153,255,.16); color: var(--blue); border-color: rgba(0,153,255,.35); }
-    .road-cell.right { background: rgba(255,34,68,.16); color: var(--red); border-color: rgba(255,34,68,.35); }
-    .road-cell.draw { background: rgba(168,175,209,.12); color: var(--draw); border-color: rgba(168,175,209,.24); }
-    .road-cell.empty { background: transparent; border-style: dashed; opacity: .35; }
-
-    .toast {
-      position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(80px);
-      background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px 20px;
-      opacity: 0; transition: .28s; pointer-events: none; text-transform: uppercase; z-index: 10; font-size: .76rem;
-    }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-    .toast.win { color: var(--gold); border-color: var(--gold); }
-    .toast.info { color: var(--blue); border-color: var(--blue); }
-    .row-new td { animation: rowIn .6s ease; }
-    @keyframes rowIn {
-      from { opacity: 0; background: rgba(255,215,0,.08); }
-      to { opacity: 1; background: transparent; }
-    }
-    @media (max-width: 980px) {
-      .layout { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 620px) {
-      header { flex-direction: column; align-items: stretch; }
-      .arena { grid-template-columns: 1fr; }
-      .actions-top, .stats-row { grid-template-columns: 1fr; }
-      .digit-display { font-size: 2.8rem; }
-      .history-header { flex-direction: column; align-items: stretch; }
-      .actions-row { width: 100%; }
-      .actions-row > * { flex: 1; }
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PREDICTOR — Left vs Right</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--red:#ff2244;--blue:#0099ff;--gold:#ffd700;--bg:#06080f;--panel:#0c1120;--border:#1a2540;--text:#e0e8ff;--dim:#4a5a80;--draw:#a0a0c0;--ok:#35d07f}
+*{margin:0;padding:0;box-sizing:border-box}body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;min-height:100vh;overflow-x:hidden}body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,153,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,153,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}.container{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:20px}header{text-align:center;padding:26px 0 18px}header h1{font-family:'Orbitron',sans-serif;font-weight:900;font-size:clamp(1.6rem,5vw,2.8rem);letter-spacing:.2em;background:linear-gradient(135deg,var(--red),#ff8c00,var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-transform:uppercase}header p{color:var(--dim);font-size:.75rem;letter-spacing:.15em;margin-top:6px;text-transform:uppercase}.topbar{display:flex;justify-content:flex-end;gap:10px;margin-bottom:12px;flex-wrap:wrap}.small-btn,.file-label{background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--dim);font-family:inherit;font-size:.68rem;padding:8px 12px;cursor:pointer;letter-spacing:.08em;text-transform:uppercase;text-decoration:none}.small-btn:hover,.file-label:hover{border-color:var(--gold);color:var(--gold)}input[type=file]{display:none}.prediction-banner{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;gap:16px;position:relative;overflow:hidden}.prediction-banner::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}.prediction-banner.pred-left::before{background:var(--blue)}.prediction-banner.pred-right::before{background:var(--red)}.prediction-banner.pred-draw::before{background:var(--draw)}.prediction-banner.pred-none::before{background:var(--dim)}.pred-label{font-size:.65rem;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}.pred-main{font-family:'Orbitron',sans-serif;font-size:clamp(1rem,3vw,1.5rem);font-weight:700;letter-spacing:.1em}.pred-main.left{color:var(--blue)}.pred-main.right{color:var(--red)}.pred-main.draw{color:var(--draw)}.pred-main.none{color:var(--dim)}.pred-confidence{margin-left:auto;text-align:right}.pred-confidence .conf-value{font-family:'Orbitron',sans-serif;font-size:1.25rem;font-weight:700;color:var(--gold)}.pred-confidence .conf-label{font-size:.6rem;color:var(--dim);letter-spacing:.15em;text-transform:uppercase}.pred-reason{font-size:.72rem;color:var(--dim);line-height:1.5;flex:1}.arena{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-bottom:20px}.side-panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center}.left-panel{border-color:rgba(0,153,255,.3)}.right-panel{border-color:rgba(255,34,68,.3)}.side-name{font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:.2em;margin-bottom:12px;text-transform:uppercase}.left-panel .side-name{color:var(--blue)}.right-panel .side-name{color:var(--red)}.digit-display{font-family:'Orbitron',sans-serif;font-size:3.4rem;font-weight:900;line-height:1;margin-bottom:14px}.left-panel .digit-display{color:var(--blue)}.right-panel .digit-display{color:var(--red)}.digit-input{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Orbitron',sans-serif;font-size:1.2rem;font-weight:700;text-align:center;padding:10px;outline:none;-moz-appearance:textfield}.digit-input::-webkit-inner-spin-button,.digit-input::-webkit-outer-spin-button{-webkit-appearance:none}.left-panel .digit-input:focus{border-color:var(--blue)}.right-panel .digit-input:focus{border-color:var(--red)}.vs-badge{font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:900;color:var(--dim)}.submit-btn{width:100%;margin-bottom:20px;background:linear-gradient(135deg,rgba(255,34,68,.15),rgba(0,153,255,.15));border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Orbitron',sans-serif;font-size:.85rem;font-weight:700;letter-spacing:.15em;padding:14px;cursor:pointer;text-transform:uppercase}.submit-btn:hover{background:linear-gradient(135deg,rgba(255,34,68,.3),rgba(0,153,255,.3));border-color:rgba(255,255,255,.2)}.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}.stat-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center}.stat-value{font-family:'Orbitron',sans-serif;font-size:1.4rem;font-weight:700;line-height:1;margin-bottom:4px}.red{color:var(--red)}.blue{color:var(--blue)}.gold{color:var(--gold)}.dim{color:var(--draw)}.stat-label{font-size:.6rem;color:var(--dim);letter-spacing:.15em;text-transform:uppercase}.rate-bar-wrap,.history-wrap,.viz-wrap{background:var(--panel);border:1px solid var(--border);border-radius:12px;margin-bottom:20px}.rate-bar-wrap{padding:14px 18px}.rate-bar-labels{display:flex;justify-content:space-between;font-size:.65rem;letter-spacing:.1em;margin-bottom:8px;text-transform:uppercase}.rate-bar{height:10px;background:var(--border);border-radius:99px;overflow:hidden;display:flex}.rate-bar-left{height:100%;background:linear-gradient(90deg,#0077cc,#00ccff)}.rate-bar-draw{height:100%;background:var(--draw)}.rate-bar-right{height:100%;background:linear-gradient(90deg,#ff2244,#ff6666)}.history-header,.viz-header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border)}.history-header h3,.viz-header h3{font-family:'Orbitron',sans-serif;font-size:.75rem;font-weight:700;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}.actions-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.history-table{width:100%;border-collapse:collapse;font-size:.75rem}.history-table th{padding:8px 12px;text-align:center;color:var(--dim);font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:400}.history-table td{padding:9px 12px;text-align:center;border-bottom:1px solid rgba(26,37,64,.5)}.history-table tr:last-child td{border-bottom:none}.tag{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.65rem;font-family:'Orbitron',sans-serif;font-weight:700;letter-spacing:.1em}.tag.left{background:rgba(0,153,255,.15);color:var(--blue);border:1px solid rgba(0,153,255,.3)}.tag.right{background:rgba(255,34,68,.15);color:var(--red);border:1px solid rgba(255,34,68,.3)}.tag.draw{background:rgba(160,160,192,.1);color:var(--draw);border:1px solid rgba(160,160,192,.2)}.history-empty{padding:40px;text-align:center;color:var(--dim);font-size:.75rem;letter-spacing:.1em}.viz-scroll{overflow:auto;padding:14px}.winner-grid{display:grid;grid-auto-flow:column;grid-auto-columns:42px;gap:8px;align-items:start;min-height:340px}.winner-col{display:grid;grid-template-rows:repeat(20,14px);gap:4px;justify-items:center}.winner-cell{width:28px;height:14px;border-radius:4px;border:1px solid transparent;display:flex;align-items:center;justify-content:center;font-size:.58rem;font-family:'Orbitron',sans-serif;font-weight:700}.winner-cell.left{background:rgba(0,153,255,.18);border-color:rgba(0,153,255,.4);color:var(--blue)}.winner-cell.right{background:rgba(255,34,68,.18);border-color:rgba(255,34,68,.4);color:var(--red)}.winner-cell.draw{background:rgba(160,160,192,.14);border-color:rgba(160,160,192,.3);color:var(--draw)}.winner-empty{width:28px;height:14px;border-radius:4px;border:1px dashed rgba(74,90,128,.22)}.viz-note{padding:0 18px 14px;color:var(--dim);font-size:.68rem}.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 24px;font-size:.8rem;letter-spacing:.1em;transition:transform .3s,opacity .3s;opacity:0;z-index:999;pointer-events:none;text-transform:uppercase}.toast.show{transform:translateX(-50%) translateY(0);opacity:1}.toast.win{border-color:var(--gold);color:var(--gold)}.toast.info{border-color:var(--blue);color:var(--blue)}.login-overlay{position:fixed;inset:0;background:rgba(2,4,8,.94);display:flex;align-items:center;justify-content:center;z-index:2000}.login-card{width:min(420px,92vw);background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:24px}.login-card h2{font-family:'Orbitron',sans-serif;font-size:1.2rem;letter-spacing:.15em;margin-bottom:8px}.login-card p{color:var(--dim);font-size:.78rem;margin-bottom:16px}.login-card input{width:100%;margin-bottom:10px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:12px;font-family:inherit}.login-card button{width:100%;padding:12px;border-radius:8px;border:1px solid var(--border);background:linear-gradient(135deg,rgba(255,34,68,.15),rgba(0,153,255,.15));color:var(--text);font-family:'Orbitron',sans-serif;cursor:pointer}.login-error{min-height:18px;color:var(--red);font-size:.75rem;margin-bottom:10px}.hidden{display:none!important}@media(max-width:700px){.stats-row{grid-template-columns:repeat(2,1fr)}.arena{gap:8px}.digit-display{font-size:2.5rem}}</style>
 </head>
 <body>
-  <div class="login-screen" id="loginScreen">
-    <div class="login-card">
-      <h1>Admin Login</h1>
-      <p>Akses aplikasi predictor dibatasi untuk user admin.</p>
-      <form id="loginForm">
-        <label>Username</label>
-        <input id="loginUser" type="text" autocomplete="username" placeholder="Masukkan username" />
-        <label>Password</label>
-        <input id="loginPass" type="password" autocomplete="current-password" placeholder="Masukkan password" />
-        <button type="submit">Masuk</button>
-        <div class="login-msg" id="loginMsg"></div>
-        <div class="login-hint">hubungi Admin berlangganan fitur PRO</div>
-      </form>
-    </div>
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <h2>ADMIN LOGIN</h2>
+    <p>Masuk untuk membuka aplikasi predictor.</p>
+    <div class="login-error" id="loginError"></div>
+    <input id="loginUser" type="text" placeholder="Username" autocomplete="username">
+    <input id="loginPass" type="password" placeholder="Password" autocomplete="current-password">
+    <button id="loginBtn">LOGIN</button>
   </div>
-
-  <div class="container" id="appShell">
-    <header>
-      <div class="title">
-        <h1>⬡ Predictor</h1>
-        <p>Adaptive Left vs Right — belajar dari miss, pola ganjil/genap, selisih, dan transisi hasil</p>
-      </div>
-      <div class="user-box">
-        <div class="u-label">Login aktif</div>
-        <div class="u-name" id="activeUser">admin</div>
-        <button id="logoutBtn">Logout</button>
-      </div>
-    </header>
-
-    <div class="layout">
-      <div>
-        <div class="prediction-banner pred-none" id="predBanner">
-          <div>
-            <div class="pred-label">Prediksi berikutnya</div>
-            <div class="pred-main none" id="predText">— Menunggu Pola</div>
-            <div class="pred-reason" id="predReason">Minimal 3 ronde untuk memulai analisis.</div>
-          </div>
-          <div class="pred-confidence">
-            <div class="conf-value" id="predConf">—</div>
-            <div class="conf-label">Confidence</div>
-          </div>
-        </div>
-
-        <div class="arena">
-          <div class="side-panel left-panel">
-            <div class="side-name">◀ Kiri</div>
-            <div class="digit-display" id="dispLeft">–</div>
-            <input class="digit-input" id="inputLeft" type="number" min="0" max="9" placeholder="0–9" />
-          </div>
-          <div class="vs-badge">VS</div>
-          <div class="side-panel right-panel">
-            <div class="side-name">Kanan ▶</div>
-            <div class="digit-display" id="dispRight">–</div>
-            <input class="digit-input" id="inputRight" type="number" min="0" max="9" placeholder="0–9" />
-          </div>
-        </div>
-
-        <div class="actions-top">
-          <button class="submit-btn" id="submitBtn">▶ Rekam ronde</button>
-          <div>
-            <button class="ghost-btn" id="btnImport">Import riwayat</button>
-            <input type="file" id="importFile" accept=".csv,.txt" hidden />
-          </div>
-        </div>
-
-        <div class="panel stats-row">
-          <div class="stat-card">
-            <div class="stat-value blue" id="statLeft">0</div>
-            <div class="stat-label">Kiri menang</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value red" id="statRight">0</div>
-            <div class="stat-label">Kanan menang</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value dim" id="statDraw">0</div>
-            <div class="stat-label">Seri</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value gold" id="statAcc">—</div>
-            <div class="stat-label">Akurasi pred.</div>
-          </div>
-        </div>
-
-        <div class="panel rate-bar-wrap">
-          <div class="rate-bar-labels">
-            <span id="labelLeft">KIRI 0%</span>
-            <span id="labelDraw">SERI 0%</span>
-            <span id="labelRight">KANAN 0%</span>
-          </div>
-          <div class="rate-bar">
-            <div class="rate-bar-left" id="barLeft" style="width:0%"></div>
-            <div class="rate-bar-draw" id="barDraw" style="width:0%"></div>
-            <div class="rate-bar-right" id="barRight" style="width:0%"></div>
-          </div>
-        </div>
-
-        <div class="panel history-wrap">
-          <div class="history-header">
-            <div class="section-title">📋 Riwayat ronde</div>
-            <div class="actions-row">
-              <button class="btn-export" id="btnExport">⬇ Export CSV</button>
-              <button class="btn-clear" id="btnClear">✕ Reset</button>
-            </div>
-          </div>
-          <div id="historyBody">
-            <div class="history-empty" id="emptyMsg">Belum ada ronde yang direkam.</div>
-            <table class="history-table" id="histTable" style="display:none">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Kiri</th>
-                  <th>Kanan</th>
-                  <th>Hasil</th>
-                  <th>Prediksi</th>
-                  <th>✓</th>
-                </tr>
-              </thead>
-              <tbody id="histTbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <div class="panel road-wrap">
-          <div class="section-title">Visual statistik pemenang</div>
-          <div class="road-legend">
-            <div class="legend-pill">L = Kiri</div>
-            <div class="legend-pill">R = Kanan</div>
-            <div class="legend-pill">D = Seri</div>
-          </div>
-          <div class="roadmap-frame">
-            <div class="roadmap-grid" id="roadmapGrid"></div>
-          </div>
-        </div>
-      </div>
-    </div>
+</div>
+<div class="container hidden" id="appRoot">
+  <header><h1>⬡ PREDICTOR</h1><p>Left vs Right — Adaptive Pattern Engine</p></header>
+  <div class="topbar">
+    <label class="file-label">⬆ Import Riwayat <input type="file" id="importFile" accept=".csv,.txt"></label>
+    <button class="small-btn" id="btnExport">⬇ Export CSV</button>
+    <button class="small-btn" id="btnClear">✕ Reset</button>
+    <button class="small-btn" id="btnLogout">Logout</button>
   </div>
-
-  <div class="toast" id="toast"></div>
-
-  <script src="./auth.js"></script>
-  <script src="./app.js"></script>
+  <div class="prediction-banner pred-none" id="predBanner">
+    <div><div class="pred-label">Prediksi Berikutnya</div><div class="pred-main none" id="predText">— Menunggu Data</div><div class="pred-reason" id="predReason">Masukkan minimal 3 ronde untuk memulai analisis pola.</div></div>
+    <div class="pred-confidence"><div class="conf-value" id="predConf">—</div><div class="conf-label">Confidence</div></div>
+  </div>
+  <div class="arena">
+    <div class="side-panel left-panel"><div class="side-name">◀ Kiri</div><div class="digit-display" id="dispLeft">–</div><input class="digit-input" id="inputLeft" type="number" min="0" max="9" placeholder="0–9"></div>
+    <div class="vs-badge">VS</div>
+    <div class="side-panel right-panel"><div class="side-name">Kanan ▶</div><div class="digit-display" id="dispRight">–</div><input class="digit-input" id="inputRight" type="number" min="0" max="9" placeholder="0–9"></div>
+  </div>
+  <button class="submit-btn" id="submitBtn">▶ Rekam Ronde</button>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-value blue" id="statLeft">0</div><div class="stat-label">Kiri Menang</div></div>
+    <div class="stat-card"><div class="stat-value red" id="statRight">0</div><div class="stat-label">Kanan Menang</div></div>
+    <div class="stat-card"><div class="stat-value dim" id="statDraw">0</div><div class="stat-label">Seri</div></div>
+    <div class="stat-card"><div class="stat-value gold" id="statAcc">—</div><div class="stat-label">Akurasi Pred.</div></div>
+  </div>
+  <div class="rate-bar-wrap">
+    <div class="rate-bar-labels"><span id="labelLeft">KIRI 0%</span><span id="labelDraw">SERI 0%</span><span id="labelRight">KANAN 0%</span></div>
+    <div class="rate-bar"><div class="rate-bar-left" id="barLeft" style="width:0%"></div><div class="rate-bar-draw" id="barDraw" style="width:0%"></div><div class="rate-bar-right" id="barRight" style="width:0%"></div></div>
+  </div>
+  <div class="viz-wrap">
+    <div class="viz-header"><h3>📊 Jalur Pemenang</h3><span style="color:var(--dim);font-size:.7rem">Maks. 20 kolom terakhir</span></div>
+    <div class="viz-scroll"><div class="winner-grid" id="winnerGrid"></div></div>
+    <div class="viz-note">Pemenang ditumpuk ke bawah. Saat pemenang berubah, dibuat kolom baru di sebelah kanan. Hanya 20 kolom hasil terakhir yang ditampilkan.</div>
+  </div>
+  <div class="history-wrap">
+    <div class="history-header"><h3>📋 Riwayat Ronde</h3></div>
+    <div id="historyBody"><div class="history-empty" id="emptyMsg">Belum ada ronde yang direkam.</div><table class="history-table" id="histTable" style="display:none"><thead><tr><th>#</th><th>Kiri</th><th>Kanan</th><th>Hasil</th><th>Prediksi</th><th>✓</th></tr></thead><tbody id="histTbody"></tbody></table></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="auth.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
