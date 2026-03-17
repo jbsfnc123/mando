@@ -1,3 +1,1 @@
-const AUTH_USERS = [
-  { username: 'admin', password: '1234', role: 'admin' }
-];
+const AUTH_USERS = [{ username: 'admin', password: '1234', role: 'admin' }];
