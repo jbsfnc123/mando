@@ -3,17 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>PREDICTOR — Method Recommendation</title>
+<title>PREDICTOR — Kombinasi Angka</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
-:root{
-  --red:#ff2244; --blue:#0099ff; --gold:#ffd700; --bg:#06080f; --panel:#0c1120;
-  --border:#1a2540; --text:#e0e8ff; --dim:#6f81aa; --draw:#a0a0c0; --green:#33d17a;
-}
+:root{--red:#ff2244;--blue:#0099ff;--gold:#ffd700;--bg:#06080f;--panel:#0c1120;--border:#1a2540;--text:#e0e8ff;--dim:#6f81aa;--draw:#a0a0c0;--green:#33d17a}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;min-height:100vh}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(0,153,255,.03) 1px, transparent 1px),linear-gradient(90deg, rgba(0,153,255,.03) 1px, transparent 1px);background-size:40px 40px}
-.container{position:relative;z-index:1;max-width:1360px;margin:0 auto;padding:18px}
+.container{position:relative;z-index:1;max-width:1220px;margin:0 auto;padding:18px}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:14px}
 header{text-align:center;padding:18px 0 16px}
 h1{font-family:'Orbitron',sans-serif;font-weight:900;letter-spacing:.18em;font-size:clamp(1.6rem,4vw,2.7rem);background:linear-gradient(135deg,var(--red),#ff8c00,var(--blue));-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -22,7 +19,7 @@ header p{color:var(--dim);font-size:.75rem;margin-top:8px;letter-spacing:.14em;t
 .login-status{font-size:.8rem;color:var(--dim)}
 .mini-btn,.submit-btn,.import-label,.logout-btn,.login-btn{border:1px solid var(--border);background:transparent;color:var(--text);border-radius:10px;padding:10px 14px;cursor:pointer;font-family:inherit}
 .mini-btn:hover,.import-label:hover,.logout-btn:hover{border-color:var(--gold);color:var(--gold)}
-.app-grid{display:grid;grid-template-columns:1.2fr .95fr;gap:16px}
+.app-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
 .main-col,.side-col{display:flex;flex-direction:column;gap:16px}
 .prediction-banner{padding:18px 20px;display:flex;gap:16px;align-items:center;overflow:hidden;position:relative}
 .prediction-banner::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
@@ -30,8 +27,8 @@ header p{color:var(--dim);font-size:.75rem;margin-top:8px;letter-spacing:.14em;t
 .pred-label{font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
 .pred-main{font-family:'Orbitron',sans-serif;font-size:clamp(1rem,3vw,1.55rem);margin-top:4px}
 .pred-main.left{color:var(--blue)} .pred-main.right{color:var(--red)} .pred-main.draw{color:var(--draw)} .pred-main.none{color:var(--dim)}
-.pred-reason{font-size:.72rem;color:var(--dim);line-height:1.5;margin-top:8px}
-.pred-confidence{margin-left:auto;text-align:right}
+.pred-reason{font-size:.72rem;color:var(--dim);line-height:1.55;margin-top:8px}
+.pred-confidence{margin-left:auto;text-align:right;min-width:120px}
 .conf-value{font-family:'Orbitron',sans-serif;color:var(--gold);font-size:1.35rem}
 .conf-label{font-size:.62rem;color:var(--dim);letter-spacing:.15em;text-transform:uppercase}
 .arena{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center}
@@ -71,25 +68,12 @@ tr:last-child td{border-bottom:none}
 .tag.right{background:rgba(255,34,68,.15);border:1px solid rgba(255,34,68,.28);color:var(--red)}
 .tag.draw{background:rgba(160,160,192,.12);border:1px solid rgba(160,160,192,.22);color:var(--draw)}
 .tag.off{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:var(--dim)}
-.settings-card,.streak-board,.recommend-card{padding:16px}
-.settings-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px;max-height:520px;overflow:auto;padding-right:4px}
-.method-item{display:grid;grid-template-columns:1fr auto;gap:10px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px}
-.method-meta{display:flex;flex-direction:column;gap:4px}
-.method-name{font-size:.78rem}
-.method-desc{font-size:.65rem;color:var(--dim);line-height:1.4}
-.method-controls{display:flex;align-items:center;gap:10px}
-.weight-box{display:flex;align-items:center;gap:6px}
-.weight-box input{width:74px;background:rgba(255,255,255,.04);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px 8px;text-align:center;font-family:'Orbitron',sans-serif;font-size:.78rem}
-.weight-label{font-size:.6rem;color:var(--dim);text-transform:uppercase;letter-spacing:.12em}
-.switch{position:relative;width:46px;height:26px;display:inline-block}
-.switch input{display:none}
-.slider{position:absolute;inset:0;background:#28324d;border-radius:999px;cursor:pointer;transition:.2s;border:1px solid rgba(255,255,255,.08)}
-.slider:before{content:'';position:absolute;width:18px;height:18px;left:4px;top:3px;background:#cfd8ff;border-radius:50%;transition:.2s}
-.switch input:checked + .slider{background:rgba(0,153,255,.35)}
-.switch input:checked + .slider:before{transform:translateX(19px);background:#fff}
-.settings-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.hint{font-size:.68rem;color:var(--dim);line-height:1.5;margin-top:10px}
-.import-input{display:none}
+.info-card,.lookup-card,.streak-board{padding:16px}
+.info-block{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
+.info-box{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:12px}
+.info-title{font-family:'Orbitron',sans-serif;font-size:.7rem;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px}
+.info-main{font-size:.84rem;line-height:1.6}
+.info-muted{font-size:.68rem;color:var(--dim);line-height:1.5;margin-top:6px}
 .visual-wrap{margin-top:12px;overflow:auto;padding-bottom:6px}
 .board-grid{display:grid;grid-template-columns:repeat(20,28px);grid-template-rows:repeat(20,28px);gap:6px;min-width:max-content}
 .board-cell{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.08);font-size:.62rem;font-family:'Orbitron',sans-serif;background:rgba(255,255,255,.02);color:var(--dim)}
@@ -100,13 +84,8 @@ tr:last-child td{border-bottom:none}
 .legend-dot{display:inline-flex;align-items:center;gap:6px}
 .dot{width:12px;height:12px;border-radius:50%}
 .dot.left{background:rgba(0,153,255,.85)} .dot.right{background:rgba(255,34,68,.85)} .dot.draw{background:rgba(160,160,192,.85)}
-.rec-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
-.rec-box{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:12px}
-.rec-title{font-family:'Orbitron',sans-serif;font-size:.7rem;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px}
-.rec-main{font-size:.82rem;line-height:1.6}
-.rec-muted{font-size:.68rem;color:var(--dim);line-height:1.5;margin-top:6px}
-.rank-table td,.rank-table th{font-size:.68rem;padding:7px 8px}
-.badge-rank{display:inline-block;border:1px solid rgba(255,215,0,.35);color:var(--gold);padding:2px 8px;border-radius:999px;font-size:.62rem}
+.lookup-table td,.lookup-table th{font-size:.68rem;padding:7px 8px}
+.import-input{display:none}
 .login-overlay{position:fixed;inset:0;background:rgba(2,4,10,.86);display:flex;align-items:center;justify-content:center;z-index:99;backdrop-filter:blur(6px)}
 .login-box{width:min(92vw,420px);padding:22px}
 .login-box h2{font-family:'Orbitron',sans-serif;margin-bottom:10px;letter-spacing:.14em}
@@ -119,7 +98,7 @@ tr:last-child td{border-bottom:none}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 .toast.info{border-color:var(--blue);color:var(--blue)} .toast.win{border-color:var(--gold);color:var(--gold)}
 @media (max-width:1040px){.app-grid{grid-template-columns:1fr}}
-@media (max-width:720px){.stats-row{grid-template-columns:repeat(2,1fr)} .arena{grid-template-columns:1fr}.vs-badge{text-align:center}.method-item{grid-template-columns:1fr}.method-controls{justify-content:space-between}}
+@media (max-width:720px){.stats-row{grid-template-columns:repeat(2,1fr)} .arena{grid-template-columns:1fr}.vs-badge{text-align:center}}
 </style>
 </head>
 <body>
@@ -137,11 +116,11 @@ tr:last-child td{border-bottom:none}
 <div class="container">
   <header>
     <h1>⬡ PREDICTOR</h1>
-    <p>Left vs Right — Method Recommendation Engine</p>
+    <p>Lookup Kombinasi Angka → Hasil Berikutnya</p>
   </header>
 
   <div class="topbar card">
-    <div class="login-status">Status: <span class="green">Admin aktif</span> · Rekomendasi metode tunggal & mix otomatis</div>
+    <div class="login-status">Status: <span class="green">Admin aktif</span> · Logika tunggal kombinasi angka dengan fallback kombinasi terdekat</div>
     <button class="logout-btn" id="logoutBtn">Logout</button>
   </div>
 
@@ -151,7 +130,7 @@ tr:last-child td{border-bottom:none}
         <div>
           <div class="pred-label">Prediksi Berikutnya</div>
           <div class="pred-main none" id="predText">— Menunggu Data</div>
-          <div class="pred-reason" id="predReason">Masukkan minimal 3 ronde untuk memulai analisis pola.</div>
+          <div class="pred-reason" id="predReason">Sistem membaca pasangan angka ronde terakhir, lalu mencari hasil ronde berikutnya dari seluruh riwayat.</div>
         </div>
         <div class="pred-confidence">
           <div class="conf-value" id="predConf">—</div>
@@ -213,45 +192,33 @@ tr:last-child td{border-bottom:none}
     </div>
 
     <div class="side-col">
-      <div class="recommend-card card">
-        <div class="section-title">🎯 Rekomendasi Metode</div>
-        <div class="rec-grid">
-          <div class="rec-box">
-            <div class="rec-title">Metode Tunggal Paling Efektif</div>
-            <div class="rec-main" id="bestSingle">Belum cukup data.</div>
-            <div class="rec-muted" id="bestSingleMeta">Tambahkan riwayat untuk menghitung performa.</div>
+      <div class="info-card card">
+        <div class="section-title">🧠 Info Lookup Aktif</div>
+        <div class="info-block">
+          <div class="info-box">
+            <div class="info-title">Pasangan Aktif</div>
+            <div class="info-main" id="lookupPair">Belum ada pasangan aktif.</div>
+            <div class="info-muted" id="lookupMeta">Sistem akan memakai pasangan exact dulu. Jika tidak ada, sistem mencari pasangan terdekat.</div>
           </div>
-          <div class="rec-box">
-            <div class="rec-title">Mix Metode Paling Efektif</div>
-            <div class="rec-main" id="bestMix">Belum cukup data.</div>
-            <div class="rec-muted" id="bestMixMeta">Sistem akan menguji kombinasi metode dari histori.</div>
-          </div>
-          <div class="rec-box">
-            <div class="rec-title">Peringkat Efektivitas</div>
-            <div id="methodRankWrap">
-              <div class="rec-muted">Belum ada ranking.</div>
-            </div>
+          <div class="info-box">
+            <div class="info-title">Top Hasil Pasangan</div>
+            <div id="lookupRankWrap"><div class="info-muted">Belum ada data pasangan.</div></div>
           </div>
         </div>
       </div>
 
-      <div class="settings-card card">
-        <div class="section-title">⚙ Pengaturan Metode Prediksi</div>
-        <div class="settings-grid" id="settingsGrid"></div>
-        <div class="settings-actions">
-          <button class="mini-btn" id="btnAllOn">Semua ON</button>
-          <button class="mini-btn" id="btnAllOff">Semua OFF</button>
-          <button class="mini-btn" id="btnDefault">Default</button>
-          <button class="mini-btn" id="btnWeightDefault">Reset Bobot</button>
-          <button class="mini-btn" id="btnApplyBestSingle">Pakai Best Single</button>
-          <button class="mini-btn" id="btnApplyBestMix">Pakai Best Mix</button>
+      <div class="lookup-card card">
+        <div class="section-title">📚 Cara Kerja</div>
+        <div class="info-muted" style="margin-top:10px">
+          Contoh: bila riwayat pernah menghasilkan pasangan <b>9,7</b> lalu pada ronde sesudahnya hasilnya <b>KIRI</b>,
+          maka sistem menyimpan <b>9,7 → KIRI</b>. Saat pasangan 9,7 muncul lagi, prediksi diambil dari akumulasi hasil berikutnya
+          pada seluruh riwayat. Jika exact tidak ada, sistem fallback ke pasangan terdekat seperti 9,6 lalu 9,8 dan seterusnya.
         </div>
-        <div class="hint">Rekomendasi dihitung dari backtest riwayat. Sistem menilai akurasi dan jumlah sampel metode.</div>
       </div>
 
       <div class="streak-board card">
         <div class="section-title">📊 Visual Riwayat Pemenang</div>
-        <div class="hint">Maksimal 20 kolom dari run pemenang terakhir. Jika pemenang berganti, pindah ke kolom berikutnya.</div>
+        <div class="info-muted" style="margin-top:10px">Maksimal 20 kolom dari run pemenang terakhir. Jika pemenang berganti, pindah ke kolom berikutnya.</div>
         <div class="visual-wrap"><div class="board-grid" id="boardGrid"></div></div>
         <div class="board-legend">
           <span class="legend-dot"><span class="dot left"></span>Kiri</span>
