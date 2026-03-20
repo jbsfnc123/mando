@@ -2,231 +2,193 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>PREDICTOR — Kombinasi Angka</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>PREDICTOR Mobile Auto Weight</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
-:root{--red:#ff2244;--blue:#0099ff;--gold:#ffd700;--bg:#06080f;--panel:#0c1120;--border:#1a2540;--text:#e0e8ff;--dim:#6f81aa;--draw:#a0a0c0;--green:#33d17a}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;min-height:100vh}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(0,153,255,.03) 1px, transparent 1px),linear-gradient(90deg, rgba(0,153,255,.03) 1px, transparent 1px);background-size:40px 40px}
-.container{position:relative;z-index:1;max-width:1220px;margin:0 auto;padding:18px}
-.card{background:var(--panel);border:1px solid var(--border);border-radius:14px}
-header{text-align:center;padding:18px 0 16px}
-h1{font-family:'Orbitron',sans-serif;font-weight:900;letter-spacing:.18em;font-size:clamp(1.6rem,4vw,2.7rem);background:linear-gradient(135deg,var(--red),#ff8c00,var(--blue));-webkit-background-clip:text;background-clip:text;color:transparent}
-header p{color:var(--dim);font-size:.75rem;margin-top:8px;letter-spacing:.14em;text-transform:uppercase}
-.topbar{display:flex;gap:12px;justify-content:space-between;align-items:center;padding:12px 16px;margin-bottom:16px}
-.login-status{font-size:.8rem;color:var(--dim)}
-.mini-btn,.submit-btn,.import-label,.logout-btn,.login-btn{border:1px solid var(--border);background:transparent;color:var(--text);border-radius:10px;padding:10px 14px;cursor:pointer;font-family:inherit}
-.mini-btn:hover,.import-label:hover,.logout-btn:hover{border-color:var(--gold);color:var(--gold)}
-.app-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
-.main-col,.side-col{display:flex;flex-direction:column;gap:16px}
-.prediction-banner{padding:18px 20px;display:flex;gap:16px;align-items:center;overflow:hidden;position:relative}
-.prediction-banner::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
-.pred-none::before{background:var(--dim)} .pred-left::before{background:var(--blue)} .pred-right::before{background:var(--red)} .pred-draw::before{background:var(--draw)}
-.pred-label{font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
-.pred-main{font-family:'Orbitron',sans-serif;font-size:clamp(1rem,3vw,1.55rem);margin-top:4px}
-.pred-main.left{color:var(--blue)} .pred-main.right{color:var(--red)} .pred-main.draw{color:var(--draw)} .pred-main.none{color:var(--dim)}
-.pred-reason{font-size:.72rem;color:var(--dim);line-height:1.55;margin-top:8px}
-.pred-confidence{margin-left:auto;text-align:right;min-width:120px}
-.conf-value{font-family:'Orbitron',sans-serif;color:var(--gold);font-size:1.35rem}
-.conf-label{font-size:.62rem;color:var(--dim);letter-spacing:.15em;text-transform:uppercase}
-.arena{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center}
-.side-panel{padding:18px;text-align:center}
-.left-panel{border-color:rgba(0,153,255,.35)} .right-panel{border-color:rgba(255,34,68,.35)}
-.side-name{font-family:'Orbitron',sans-serif;letter-spacing:.18em;font-size:.7rem;margin-bottom:12px;text-transform:uppercase}
-.left-panel .side-name,.left-panel .digit-display{color:var(--blue)}
-.right-panel .side-name,.right-panel .digit-display{color:var(--red)}
-.digit-display{font-family:'Orbitron',sans-serif;font-size:3.4rem;font-weight:900;margin-bottom:14px}
-.digit-input{width:100%;background:rgba(255,255,255,.04);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:10px;text-align:center;font-family:'Orbitron',sans-serif;font-size:1.15rem;outline:none}
-.left-panel .digit-input:focus{border-color:var(--blue)} .right-panel .digit-input:focus{border-color:var(--red)}
-.vs-badge{font-family:'Orbitron',sans-serif;font-weight:900;color:var(--dim)}
-.submit-btn{width:100%;margin-top:14px;font-family:'Orbitron',sans-serif;letter-spacing:.14em;text-transform:uppercase;background:linear-gradient(135deg,rgba(255,34,68,.16),rgba(0,153,255,.16))}
-.submit-btn:hover,.login-btn:hover{background:linear-gradient(135deg,rgba(255,34,68,.28),rgba(0,153,255,.28));border-color:rgba(255,255,255,.22)}
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.stat-card{padding:14px 10px;text-align:center}
-.stat-value{font-family:'Orbitron',sans-serif;font-size:1.35rem;margin-bottom:4px}
-.blue{color:var(--blue)} .red{color:var(--red)} .gold{color:var(--gold)} .dim{color:var(--draw)} .green{color:var(--green)}
-.stat-label{font-size:.62rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase}
-.rate-wrap{padding:14px 16px}
-.rate-labels{display:flex;justify-content:space-between;margin-bottom:8px;font-size:.65rem;text-transform:uppercase}
-.rate-labels span:nth-child(1){color:var(--blue)} .rate-labels span:nth-child(2){color:var(--dim)} .rate-labels span:nth-child(3){color:var(--red)}
-.rate-bar{height:10px;background:var(--border);display:flex;overflow:hidden;border-radius:999px}
-.rate-left{background:linear-gradient(90deg,#0077cc,#00ccff)} .rate-draw{background:var(--draw)} .rate-right{background:linear-gradient(90deg,#ff2244,#ff6666)}
-.rate-left,.rate-draw,.rate-right{height:100%}
-.history-wrap{overflow:hidden}
-.history-header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);gap:10px;flex-wrap:wrap}
-.history-header h3,.section-title{font-family:'Orbitron',sans-serif;font-size:.75rem;letter-spacing:.18em;color:var(--dim);text-transform:uppercase}
-.actions-row{display:flex;gap:8px;flex-wrap:wrap}
-.history-empty{padding:34px;text-align:center;color:var(--dim);font-size:.76rem}
-table{width:100%;border-collapse:collapse}
-th,td{padding:9px 10px;text-align:center;border-bottom:1px solid rgba(26,37,64,.55);font-size:.74rem}
-th{font-size:.6rem;color:var(--dim);text-transform:uppercase;letter-spacing:.14em;font-weight:400}
-tr:last-child td{border-bottom:none}
-.tag{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.65rem;font-family:'Orbitron',sans-serif;letter-spacing:.08em}
-.tag.left{background:rgba(0,153,255,.15);border:1px solid rgba(0,153,255,.28);color:var(--blue)}
-.tag.right{background:rgba(255,34,68,.15);border:1px solid rgba(255,34,68,.28);color:var(--red)}
-.tag.draw{background:rgba(160,160,192,.12);border:1px solid rgba(160,160,192,.22);color:var(--draw)}
-.tag.off{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:var(--dim)}
-.info-card,.lookup-card,.streak-board{padding:16px}
-.info-block{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
-.info-box{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:12px}
-.info-title{font-family:'Orbitron',sans-serif;font-size:.7rem;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px}
-.info-main{font-size:.84rem;line-height:1.6}
-.info-muted{font-size:.68rem;color:var(--dim);line-height:1.5;margin-top:6px}
-.visual-wrap{margin-top:12px;overflow:auto;padding-bottom:6px}
-.board-grid{display:grid;grid-template-columns:repeat(20,28px);grid-template-rows:repeat(20,28px);gap:6px;min-width:max-content}
-.board-cell{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.08);font-size:.62rem;font-family:'Orbitron',sans-serif;background:rgba(255,255,255,.02);color:var(--dim)}
-.board-cell.left{color:var(--blue);border-color:rgba(0,153,255,.35);background:rgba(0,153,255,.1)}
-.board-cell.right{color:var(--red);border-color:rgba(255,34,68,.35);background:rgba(255,34,68,.1)}
-.board-cell.draw{color:var(--draw);border-color:rgba(160,160,192,.25);background:rgba(160,160,192,.08)}
-.board-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:.68rem;color:var(--dim)}
-.legend-dot{display:inline-flex;align-items:center;gap:6px}
-.dot{width:12px;height:12px;border-radius:50%}
-.dot.left{background:rgba(0,153,255,.85)} .dot.right{background:rgba(255,34,68,.85)} .dot.draw{background:rgba(160,160,192,.85)}
-.lookup-table td,.lookup-table th{font-size:.68rem;padding:7px 8px}
-.import-input{display:none}
-.login-overlay{position:fixed;inset:0;background:rgba(2,4,10,.86);display:flex;align-items:center;justify-content:center;z-index:99;backdrop-filter:blur(6px)}
-.login-box{width:min(92vw,420px);padding:22px}
-.login-box h2{font-family:'Orbitron',sans-serif;margin-bottom:10px;letter-spacing:.14em}
-.login-box p{font-size:.76rem;color:var(--dim);line-height:1.5;margin-bottom:14px}
-.form-group{margin-bottom:12px}
-.form-group label{display:block;margin-bottom:6px;font-size:.72rem;color:var(--dim)}
-.form-group input{width:100%;background:rgba(255,255,255,.04);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:12px;outline:none}
-.login-error{min-height:20px;color:var(--red);font-size:.72rem;margin-top:10px}
-.toast{position:fixed;left:50%;bottom:25px;transform:translateX(-50%) translateY(80px);opacity:0;transition:.25s;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 18px;z-index:120;text-transform:uppercase;font-size:.76rem;letter-spacing:.1em}
+:root{
+  --bg:#070a12; --panel:#0d1322; --panel2:#11192c; --border:#1c2948;
+  --text:#e8efff; --dim:#7c8fb8; --blue:#18a0ff; --red:#ff3c5f; --draw:#b6b8d6;
+  --gold:#ffd24d; --amber:#ffb347; --green:#37d67a;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;opacity:.55;
+  background-image:linear-gradient(rgba(24,160,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(24,160,255,.03) 1px,transparent 1px);
+  background-size:28px 28px;
+}
+.app{max-width:520px;margin:0 auto;padding:12px 12px 32px;position:relative;z-index:1}
+.card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.18)}
+.header{padding:14px 14px 10px;text-align:center}
+.header h1{margin:0;font-family:'Orbitron',sans-serif;font-size:clamp(1.25rem,6vw,2rem);letter-spacing:.16em;background:linear-gradient(135deg,var(--red),#ff9a3c,var(--blue));-webkit-background-clip:text;background-clip:text;color:transparent}
+.header p{margin:6px 0 0;color:var(--dim);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase}
+.top-actions{display:flex;gap:8px;margin:10px 0 12px}
+.btn{flex:1;border:1px solid var(--border);background:rgba(255,255,255,.02);color:var(--text);border-radius:12px;padding:11px 10px;font-family:inherit;font-size:.76rem}
+.btn:active{transform:scale(.98)}
+.btn-danger{border-color:rgba(255,60,95,.35);color:#ff9aac}
+.btn-accent{border-color:rgba(255,210,77,.35);color:var(--gold)}
+.prediction{padding:14px;position:relative;overflow:hidden}
+.prediction::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
+.prediction.none::before{background:var(--dim)}
+.prediction.left::before{background:var(--blue)}
+.prediction.right::before{background:var(--red)}
+.prediction.draw::before{background:var(--draw)}
+.prediction.skip::before{background:var(--amber)}
+.pred-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.pred-label{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+.pred-main{font-family:'Orbitron',sans-serif;font-size:1.18rem;margin-top:6px;line-height:1.25}
+.pred-main.left{color:var(--blue)} .pred-main.right{color:var(--red)} .pred-main.draw{color:var(--draw)} .pred-main.skip{color:var(--amber)} .pred-main.none{color:var(--dim)}
+.pred-conf{text-align:right}
+.pred-conf .v{font-family:'Orbitron',sans-serif;font-size:1.25rem;color:var(--gold)}
+.pred-conf .l{font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.pred-reason{margin-top:10px;color:var(--dim);font-size:.72rem;line-height:1.55}
+.input-card{padding:14px}
+.input-row{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+.box{padding:12px;border:1px solid var(--border);border-radius:14px;text-align:center;background:rgba(255,255,255,.02)}
+.box.active{box-shadow:0 0 0 1px rgba(255,210,77,.45) inset}
+.box.left.active{border-color:rgba(24,160,255,.6)}
+.box.right.active{border-color:rgba(255,60,95,.6)}
+.side-name{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px}
+.left .side-name,.left .digit{color:var(--blue)}
+.right .side-name,.right .digit{color:var(--red)}
+.digit{font-family:'Orbitron',sans-serif;font-size:2.5rem;font-weight:900;line-height:1}
+.tap-hint{margin-top:8px;color:var(--dim);font-size:.62rem}
+.vs{font-family:'Orbitron',sans-serif;color:var(--dim);font-size:1rem}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.key{border:1px solid var(--border);border-radius:14px;padding:14px 8px;background:rgba(255,255,255,.03);color:var(--text);font-family:'Orbitron',sans-serif;font-size:1.05rem;min-height:50px}
+.key.wide{grid-column:span 2}
+.submit-btn{margin-top:10px;width:100%;border:1px solid var(--border);border-radius:14px;padding:14px;background:linear-gradient(135deg,rgba(255,60,95,.16),rgba(24,160,255,.16));color:var(--text);font-family:'Orbitron',sans-serif;letter-spacing:.12em;text-transform:uppercase}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.stat{padding:12px 8px;text-align:center}
+.stat .v{font-family:'Orbitron',sans-serif;font-size:1rem}
+.stat .l{margin-top:4px;font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.blue{color:var(--blue)} .red{color:var(--red)} .drawc{color:var(--draw)} .gold{color:var(--gold)} .amber{color:var(--amber)}
+.section{margin-top:12px;padding:14px}
+.section-title{font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+.indicator-list{display:grid;gap:8px}
+.indicator-item{padding:10px;border:1px solid rgba(255,255,255,.06);border-radius:12px;background:rgba(255,255,255,.02)}
+.indicator-head{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.ind-name{font-size:.74rem}
+.ind-percent{font-family:'Orbitron',sans-serif;font-size:.76rem;color:var(--gold)}
+.ind-meta{margin-top:6px;font-size:.64rem;color:var(--dim);line-height:1.45}
+.info-line{font-size:.72rem;color:var(--dim);line-height:1.55}
+.matrix-wrap{overflow:auto;max-height:320px;margin-top:10px}
+.matrix{min-width:760px;width:100%;border-collapse:collapse}
+.matrix th,.matrix td{border-bottom:1px solid rgba(28,41,72,.7);padding:6px 5px;text-align:center;font-size:.62rem}
+.matrix th{position:sticky;top:0;background:var(--panel2);z-index:1;color:var(--gold)}
+.tag{display:inline-block;padding:3px 8px;border-radius:999px;font-size:.58rem;font-family:'Orbitron',sans-serif}
+.tag.left{background:rgba(24,160,255,.14);border:1px solid rgba(24,160,255,.28);color:var(--blue)}
+.tag.right{background:rgba(255,60,95,.14);border:1px solid rgba(255,60,95,.28);color:var(--red)}
+.tag.draw{background:rgba(182,184,214,.12);border:1px solid rgba(182,184,214,.24);color:var(--draw)}
+.tag.skip{background:rgba(255,179,71,.12);border:1px solid rgba(255,179,71,.24);color:var(--amber)}
+.hint{margin-top:8px;color:var(--dim);font-size:.65rem;line-height:1.5}
+.file{display:none}
+.login-overlay{position:fixed;inset:0;background:rgba(4,7,14,.9);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+.login-box{width:100%;max-width:380px;padding:18px}
+.login-box h2{margin:0 0 8px;font-family:'Orbitron',sans-serif;letter-spacing:.12em}
+.login-box p{margin:0 0 14px;color:var(--dim);font-size:.74rem;line-height:1.45}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:.68rem;color:var(--dim);margin-bottom:5px}
+.field input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--text)}
+.login-error{min-height:18px;color:var(--red);font-size:.72rem;margin-top:8px}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(80px);opacity:0;transition:.25s;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px 16px;z-index:80;font-size:.72rem}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
-.toast.info{border-color:var(--blue);color:var(--blue)} .toast.win{border-color:var(--gold);color:var(--gold)}
-@media (max-width:1040px){.app-grid{grid-template-columns:1fr}}
-@media (max-width:720px){.stats-row{grid-template-columns:repeat(2,1fr)} .arena{grid-template-columns:1fr}.vs-badge{text-align:center}}
+.toast.info{border-color:var(--blue);color:var(--blue)}
+.toast.win{border-color:var(--gold);color:var(--gold)}
+@media (max-width:380px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .digit{font-size:2.15rem}
+}
 </style>
 </head>
 <body>
 <div class="login-overlay" id="loginOverlay">
   <div class="login-box card">
     <h2>ADMIN LOGIN</h2>
-    <p>Masuk untuk membuka aplikasi. Default: <b>admin</b> / <b>1234</b></p>
-    <div class="form-group"><label>Username</label><input id="loginUser" type="text" autocomplete="username" /></div>
-    <div class="form-group"><label>Password</label><input id="loginPass" type="password" autocomplete="current-password" /></div>
-    <button class="login-btn" id="loginBtn">Masuk</button>
+    <p>Masuk untuk membuka aplikasi mobile. Default: <b>admin</b> / <b>1234</b></p>
+    <div class="field"><label>Username</label><input id="loginUser" type="text" autocomplete="username"></div>
+    <div class="field"><label>Password</label><input id="loginPass" type="password" autocomplete="current-password"></div>
+    <button class="submit-btn" id="loginBtn">Masuk</button>
     <div class="login-error" id="loginError"></div>
   </div>
 </div>
 
-<div class="container">
-  <header>
+<div class="app">
+  <div class="header">
     <h1>⬡ PREDICTOR</h1>
-    <p>Lookup Kombinasi Angka → Hasil Berikutnya</p>
-  </header>
-
-  <div class="topbar card">
-    <div class="login-status">Status: <span class="green">Admin aktif</span> · Logika tunggal kombinasi angka dengan fallback kombinasi terdekat</div>
-    <button class="logout-btn" id="logoutBtn">Logout</button>
+    <p>Mobile Auto Weight Confidence Engine</p>
   </div>
 
-  <div class="app-grid">
-    <div class="main-col">
-      <div class="prediction-banner card pred-none" id="predBanner">
-        <div>
-          <div class="pred-label">Prediksi Berikutnya</div>
-          <div class="pred-main none" id="predText">— Menunggu Data</div>
-          <div class="pred-reason" id="predReason">Sistem membaca pasangan angka ronde terakhir, lalu mencari hasil ronde berikutnya dari seluruh riwayat.</div>
-        </div>
-        <div class="pred-confidence">
-          <div class="conf-value" id="predConf">—</div>
-          <div class="conf-label">Confidence</div>
-        </div>
-      </div>
+  <div class="top-actions">
+    <label class="btn" for="importFile">Import</label>
+    <input id="importFile" class="file" type="file" accept=".txt,.csv">
+    <button class="btn btn-accent" id="btnExport">Export</button>
+    <button class="btn btn-danger" id="btnReset">Reset</button>
+    <button class="btn" id="logoutBtn">Logout</button>
+  </div>
 
-      <div class="arena">
-        <div class="side-panel card left-panel">
-          <div class="side-name">◀ Kiri</div>
-          <div class="digit-display" id="dispLeft">–</div>
-          <input class="digit-input" id="inputLeft" type="number" min="0" max="9" placeholder="0–9" />
-        </div>
-        <div class="vs-badge">VS</div>
-        <div class="side-panel card right-panel">
-          <div class="side-name">Kanan ▶</div>
-          <div class="digit-display" id="dispRight">–</div>
-          <input class="digit-input" id="inputRight" type="number" min="0" max="9" placeholder="0–9" />
-        </div>
+  <div class="card prediction none" id="predCard">
+    <div class="pred-top">
+      <div>
+        <div class="pred-label">Prediksi Berikutnya</div>
+        <div class="pred-main none" id="predMain">— Menunggu Data</div>
       </div>
-      <button class="submit-btn" id="submitBtn">▶ Rekam Ronde</button>
-
-      <div class="stats-row">
-        <div class="stat-card card"><div class="stat-value blue" id="statLeft">0</div><div class="stat-label">Kiri Menang</div></div>
-        <div class="stat-card card"><div class="stat-value red" id="statRight">0</div><div class="stat-label">Kanan Menang</div></div>
-        <div class="stat-card card"><div class="stat-value dim" id="statDraw">0</div><div class="stat-label">Seri</div></div>
-        <div class="stat-card card"><div class="stat-value gold" id="statAcc">—</div><div class="stat-label">Akurasi Pred.</div></div>
-      </div>
-
-      <div class="rate-wrap card">
-        <div class="rate-labels">
-          <span id="labelLeft">KIRI 0%</span><span id="labelDraw">SERI 0%</span><span id="labelRight">KANAN 0%</span>
-        </div>
-        <div class="rate-bar">
-          <div class="rate-left" id="barLeft" style="width:0%"></div>
-          <div class="rate-draw" id="barDraw" style="width:0%"></div>
-          <div class="rate-right" id="barRight" style="width:0%"></div>
-        </div>
-      </div>
-
-      <div class="history-wrap card">
-        <div class="history-header">
-          <h3>📋 Riwayat Ronde</h3>
-          <div class="actions-row">
-            <label class="import-label" for="importFile">Import Riwayat</label>
-            <input id="importFile" class="import-input" type="file" accept=".csv,.txt" />
-            <button class="mini-btn" id="btnExport">Export CSV</button>
-            <button class="mini-btn" id="btnClear">Reset</button>
-          </div>
-        </div>
-        <div id="historyBody">
-          <div class="history-empty" id="emptyMsg">Belum ada ronde yang direkam.</div>
-          <table id="histTable" style="display:none">
-            <thead><tr><th>#</th><th>Kiri</th><th>Kanan</th><th>Hasil</th><th>Prediksi</th><th>✓</th></tr></thead>
-            <tbody id="histTbody"></tbody>
-          </table>
-        </div>
+      <div class="pred-conf">
+        <div class="v" id="predConf">—</div>
+        <div class="l">Confidence</div>
       </div>
     </div>
+    <div class="pred-reason" id="predReason">Prioritas layar atas: prediksi, input angka, dan persentase indikator.</div>
+  </div>
 
-    <div class="side-col">
-      <div class="info-card card">
-        <div class="section-title">🧠 Info Lookup Aktif</div>
-        <div class="info-block">
-          <div class="info-box">
-            <div class="info-title">Pasangan Aktif</div>
-            <div class="info-main" id="lookupPair">Belum ada pasangan aktif.</div>
-            <div class="info-muted" id="lookupMeta">Sistem akan memakai pasangan exact dulu. Jika tidak ada, sistem mencari pasangan terdekat.</div>
-          </div>
-          <div class="info-box">
-            <div class="info-title">Top Hasil Pasangan</div>
-            <div id="lookupRankWrap"><div class="info-muted">Belum ada data pasangan.</div></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="lookup-card card">
-        <div class="section-title">📚 Cara Kerja</div>
-        <div class="info-muted" style="margin-top:10px">
-          Contoh: bila riwayat pernah menghasilkan pasangan <b>9,7</b> lalu pada ronde sesudahnya hasilnya <b>KIRI</b>,
-          maka sistem menyimpan <b>9,7 → KIRI</b>. Saat pasangan 9,7 muncul lagi, prediksi diambil dari akumulasi hasil berikutnya
-          pada seluruh riwayat. Jika exact tidak ada, sistem fallback ke pasangan terdekat seperti 9,6 lalu 9,8 dan seterusnya.
-        </div>
-      </div>
-
-      <div class="streak-board card">
-        <div class="section-title">📊 Visual Riwayat Pemenang</div>
-        <div class="info-muted" style="margin-top:10px">Maksimal 20 kolom dari run pemenang terakhir. Jika pemenang berganti, pindah ke kolom berikutnya.</div>
-        <div class="visual-wrap"><div class="board-grid" id="boardGrid"></div></div>
-        <div class="board-legend">
-          <span class="legend-dot"><span class="dot left"></span>Kiri</span>
-          <span class="legend-dot"><span class="dot right"></span>Kanan</span>
-          <span class="legend-dot"><span class="dot draw"></span>Seri</span>
-        </div>
-      </div>
+  <div class="card input-card">
+    <div class="input-row">
+      <button class="box left active" id="leftBox">
+        <div class="side-name">◀ Kiri</div>
+        <div class="digit" id="dispLeft">–</div>
+        <div class="tap-hint">tap untuk pilih</div>
+      </button>
+      <div class="vs">VS</div>
+      <button class="box right" id="rightBox">
+        <div class="side-name">Kanan ▶</div>
+        <div class="digit" id="dispRight">–</div>
+        <div class="tap-hint">tap untuk pilih</div>
+      </button>
     </div>
+
+    <div class="keypad" id="keypad"></div>
+    <button class="submit-btn" id="submitBtn">Rekam Ronde</button>
+
+    <div class="stats">
+      <div class="card stat"><div class="v blue" id="statLeft">0</div><div class="l">Kiri</div></div>
+      <div class="card stat"><div class="v red" id="statRight">0</div><div class="l">Kanan</div></div>
+      <div class="card stat"><div class="v drawc" id="statDraw">0</div><div class="l">Seri</div></div>
+      <div class="card stat"><div class="v gold" id="statAcc">—</div><div class="l">Akurasi</div></div>
+    </div>
+  </div>
+
+  <div class="card section">
+    <div class="section-title">Persentase Indikator</div>
+    <div class="indicator-list" id="indicatorList"></div>
+    <div class="hint">Indikator diurutkan dari bobot otomatis terbesar. Auto weighting aktif secara default.</div>
+  </div>
+
+  <div class="card section">
+    <div class="section-title">Info Combo Aktif</div>
+    <div class="info-line" id="activeCombo">Belum ada combo aktif.</div>
+    <div class="info-line" id="sourceInfo" style="margin-top:8px">Belum ada sumber prediksi.</div>
+  </div>
+
+  <div class="card section">
+    <div class="section-title">History Combo Aktif</div>
+    <div id="comboHistory"></div>
+    <div class="hint" id="comboHistoryHint">Belum ada history combo aktif.</div>
+  </div>
+
+  <div class="card section">
+    <div class="section-title">Tabel Combo 00–99</div>
+    <div class="matrix-wrap"><table class="matrix" id="matrixTable"></table></div>
   </div>
 </div>
 
