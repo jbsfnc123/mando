@@ -1,199 +1,236 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>PREDICTOR Mobile Auto Weight</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg:#070a12; --panel:#0d1322; --panel2:#11192c; --border:#1c2948;
-  --text:#e8efff; --dim:#7c8fb8; --blue:#18a0ff; --red:#ff3c5f; --draw:#b6b8d6;
-  --gold:#ffd24d; --amber:#ffb347; --green:#37d67a;
-}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace}
-body::before{
-  content:'';position:fixed;inset:0;pointer-events:none;opacity:.55;
-  background-image:linear-gradient(rgba(24,160,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(24,160,255,.03) 1px,transparent 1px);
-  background-size:28px 28px;
-}
-.app{max-width:520px;margin:0 auto;padding:12px 12px 32px;position:relative;z-index:1}
-.card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.18)}
-.header{padding:14px 14px 10px;text-align:center}
-.header h1{margin:0;font-family:'Orbitron',sans-serif;font-size:clamp(1.25rem,6vw,2rem);letter-spacing:.16em;background:linear-gradient(135deg,var(--red),#ff9a3c,var(--blue));-webkit-background-clip:text;background-clip:text;color:transparent}
-.header p{margin:6px 0 0;color:var(--dim);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase}
-.top-actions{display:flex;gap:8px;margin:10px 0 12px}
-.btn{flex:1;border:1px solid var(--border);background:rgba(255,255,255,.02);color:var(--text);border-radius:12px;padding:11px 10px;font-family:inherit;font-size:.76rem}
-.btn:active{transform:scale(.98)}
-.btn-danger{border-color:rgba(255,60,95,.35);color:#ff9aac}
-.btn-accent{border-color:rgba(255,210,77,.35);color:var(--gold)}
-.prediction{padding:14px;position:relative;overflow:hidden}
-.prediction::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
-.prediction.none::before{background:var(--dim)}
-.prediction.left::before{background:var(--blue)}
-.prediction.right::before{background:var(--red)}
-.prediction.draw::before{background:var(--draw)}
-.prediction.skip::before{background:var(--amber)}
-.pred-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-.pred-label{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
-.pred-main{font-family:'Orbitron',sans-serif;font-size:1.18rem;margin-top:6px;line-height:1.25}
-.pred-main.left{color:var(--blue)} .pred-main.right{color:var(--red)} .pred-main.draw{color:var(--draw)} .pred-main.skip{color:var(--amber)} .pred-main.none{color:var(--dim)}
-.pred-conf{text-align:right}
-.pred-conf .v{font-family:'Orbitron',sans-serif;font-size:1.25rem;color:var(--gold)}
-.pred-conf .l{font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
-.pred-reason{margin-top:10px;color:var(--dim);font-size:.72rem;line-height:1.55}
-.input-card{padding:14px}
-.input-row{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
-.box{padding:12px;border:1px solid var(--border);border-radius:14px;text-align:center;background:rgba(255,255,255,.02)}
-.box.active{box-shadow:0 0 0 1px rgba(255,210,77,.45) inset}
-.box.left.active{border-color:rgba(24,160,255,.6)}
-.box.right.active{border-color:rgba(255,60,95,.6)}
-.side-name{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px}
-.left .side-name,.left .digit{color:var(--blue)}
-.right .side-name,.right .digit{color:var(--red)}
-.digit{font-family:'Orbitron',sans-serif;font-size:2.5rem;font-weight:900;line-height:1}
-.tap-hint{margin-top:8px;color:var(--dim);font-size:.62rem}
-.vs{font-family:'Orbitron',sans-serif;color:var(--dim);font-size:1rem}
-.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
-.key{border:1px solid var(--border);border-radius:14px;padding:14px 8px;background:rgba(255,255,255,.03);color:var(--text);font-family:'Orbitron',sans-serif;font-size:1.05rem;min-height:50px}
-.key.wide{grid-column:span 2}
-.submit-btn{margin-top:10px;width:100%;border:1px solid var(--border);border-radius:14px;padding:14px;background:linear-gradient(135deg,rgba(255,60,95,.16),rgba(24,160,255,.16));color:var(--text);font-family:'Orbitron',sans-serif;letter-spacing:.12em;text-transform:uppercase}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
-.stat{padding:12px 8px;text-align:center}
-.stat .v{font-family:'Orbitron',sans-serif;font-size:1rem}
-.stat .l{margin-top:4px;font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
-.blue{color:var(--blue)} .red{color:var(--red)} .drawc{color:var(--draw)} .gold{color:var(--gold)} .amber{color:var(--amber)}
-.section{margin-top:12px;padding:14px}
-.section-title{font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
-.indicator-list{display:grid;gap:8px}
-.indicator-item{padding:10px;border:1px solid rgba(255,255,255,.06);border-radius:12px;background:rgba(255,255,255,.02)}
-.indicator-head{display:flex;justify-content:space-between;gap:10px;align-items:center}
-.ind-name{font-size:.74rem}
-.ind-percent{font-family:'Orbitron',sans-serif;font-size:.76rem;color:var(--gold)}
-.ind-meta{margin-top:6px;font-size:.64rem;color:var(--dim);line-height:1.45}
-.info-line{font-size:.72rem;color:var(--dim);line-height:1.55}
-.matrix-wrap{overflow:auto;max-height:320px;margin-top:10px}
-.matrix{min-width:760px;width:100%;border-collapse:collapse}
-.matrix th,.matrix td{border-bottom:1px solid rgba(28,41,72,.7);padding:6px 5px;text-align:center;font-size:.62rem}
-.matrix th{position:sticky;top:0;background:var(--panel2);z-index:1;color:var(--gold)}
-.tag{display:inline-block;padding:3px 8px;border-radius:999px;font-size:.58rem;font-family:'Orbitron',sans-serif}
-.tag.left{background:rgba(24,160,255,.14);border:1px solid rgba(24,160,255,.28);color:var(--blue)}
-.tag.right{background:rgba(255,60,95,.14);border:1px solid rgba(255,60,95,.28);color:var(--red)}
-.tag.draw{background:rgba(182,184,214,.12);border:1px solid rgba(182,184,214,.24);color:var(--draw)}
-.tag.skip{background:rgba(255,179,71,.12);border:1px solid rgba(255,179,71,.24);color:var(--amber)}
-.hint{margin-top:8px;color:var(--dim);font-size:.65rem;line-height:1.5}
-.file{display:none}
-.login-overlay{position:fixed;inset:0;background:rgba(4,7,14,.9);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
-.login-box{width:100%;max-width:380px;padding:18px}
-.login-box h2{margin:0 0 8px;font-family:'Orbitron',sans-serif;letter-spacing:.12em}
-.login-box p{margin:0 0 14px;color:var(--dim);font-size:.74rem;line-height:1.45}
-.field{margin-bottom:10px}
-.field label{display:block;font-size:.68rem;color:var(--dim);margin-bottom:5px}
-.field input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--text)}
-.login-error{min-height:18px;color:var(--red);font-size:.72rem;margin-top:8px}
-.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(80px);opacity:0;transition:.25s;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px 16px;z-index:80;font-size:.72rem}
-.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
-.toast.info{border-color:var(--blue);color:var(--blue)}
-.toast.win{border-color:var(--gold);color:var(--gold)}
-@media (max-width:380px){
-  .stats{grid-template-columns:repeat(2,1fr)}
-  .digit{font-size:2.15rem}
-}
-</style>
-</head>
-<body>
-<div class="login-overlay" id="loginOverlay">
-  <div class="login-box card">
-    <h2>ADMIN LOGIN</h2>
-    <p>Masuk untuk membuka aplikasi mobile. Default: <b>admin</b> / <b>1234</b></p>
-    <div class="field"><label>Username</label><input id="loginUser" type="text" autocomplete="username"></div>
-    <div class="field"><label>Password</label><input id="loginPass" type="password" autocomplete="current-password"></div>
-    <button class="submit-btn" id="loginBtn">Masuk</button>
-    <div class="login-error" id="loginError"></div>
-  </div>
-</div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Portfolio Marie, IT & Business Process Head yang berfokus pada transformasi digital, tata kelola, dan operational excellence."
+    />
+    <meta name="theme-color" content="#030712" />
+    <title>Marie — IT & Business Process Head</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Lewati ke konten</a>
 
-<div class="app">
-  <div class="header">
-    <h1>⬡ PREDICTOR</h1>
-    <p>Mobile Auto Weight Confidence Engine</p>
-  </div>
+    <div class="page-shell">
+      <header class="site-header" aria-label="Navigasi utama">
+        <a class="brand" href="#home" aria-label="Marie, kembali ke beranda">
+          <span class="brand-mark" aria-hidden="true">M</span>
+          <span>MARIE<span class="brand-dot">.</span></span>
+        </a>
 
-  <div class="top-actions">
-    <label class="btn" for="importFile">Import</label>
-    <input id="importFile" class="file" type="file" accept=".txt,.csv">
-    <button class="btn btn-accent" id="btnExport">Export</button>
-    <button class="btn btn-danger" id="btnReset">Reset</button>
-    <button class="btn" id="logoutBtn">Logout</button>
-  </div>
+        <button class="menu-toggle" type="button" aria-label="Buka menu" aria-expanded="false" aria-controls="primary-nav">
+          <span></span><span></span>
+          <span class="sr-only">Buka menu</span>
+        </button>
 
-  <div class="card prediction none" id="predCard">
-    <div class="pred-top">
-      <div>
-        <div class="pred-label">Prediksi Berikutnya</div>
-        <div class="pred-main none" id="predMain">— Menunggu Data</div>
-      </div>
-      <div class="pred-conf">
-        <div class="v" id="predConf">—</div>
-        <div class="l">Confidence</div>
-      </div>
+        <nav id="primary-nav" class="primary-nav">
+          <a class="active" href="#home">Platform</a>
+          <a href="#expertise">Solutions</a>
+          <a href="#experience">Insights</a>
+          <a href="#about">Company</a>
+        </nav>
+
+        <a class="header-cta" href="mailto:marie@example.com">
+          Book a Demo <span aria-hidden="true">↗</span>
+        </a>
+      </header>
+
+      <main id="main-content">
+        <section id="home" class="hero section-pad" aria-labelledby="hero-title">
+          <canvas id="hero-canvas" aria-hidden="true"></canvas>
+          <div class="hero-grid" aria-hidden="true"></div>
+
+          <div class="hero-copy reveal">
+            <div class="eyebrow"><span></span> Adaptive IT orchestration</div>
+            <h1 id="hero-title">Turn complexity into <span class="accent-text">intelligent flow.</span></h1>
+            <p class="hero-intro">Orchestrate every IT process in one adaptive, real-time system.</p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="#process-workflow">Explore the Workflow <span aria-hidden="true">↓</span></a>
+              <span class="system-status"><i></i> All systems operational</span>
+            </div>
+          </div>
+
+          <section id="process-workflow" class="workflow-console reveal" aria-labelledby="workflow-title">
+            <header class="console-header">
+              <div>
+                <span class="console-signal" aria-hidden="true"></span>
+                <div><strong id="workflow-title">IT PROCESS ENGINE</strong><small>LIVE / WORKFLOW-01</small></div>
+              </div>
+              <button id="tour-toggle" class="tour-toggle" type="button" aria-label="Pause workflow auto-tour" aria-pressed="true">
+                <svg class="pause-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3h3v10H4zm5 0h3v10H9z"/></svg>
+                <svg class="play-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 2 10 6-10 6z"/></svg>
+                <span>Pause tour</span>
+              </button>
+            </header>
+
+            <div class="pipeline-scene" aria-label="Lima tahap proses IT Business">
+              <ol class="process-pipeline">
+                <li class="process-stage active" style="--order: 0">
+                  <button class="process-node" type="button" data-index="0" aria-pressed="true" aria-label="Tahap 1, Intake">
+                    <span class="node-index">01</span>
+                    <span class="node-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 17v3h14v-3"/></svg></span>
+                    <strong>Intake</strong><small>REQUEST IN</small>
+                  </button>
+                </li>
+                <li class="process-stage" style="--order: 1">
+                  <button class="process-node" type="button" data-index="1" aria-pressed="false" aria-label="Tahap 2, Analyze">
+                    <span class="node-index">02</span>
+                    <span class="node-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="5"/><path d="m14 14 5 5M8 10h4M10 8v4"/></svg></span>
+                    <strong>Analyze</strong><small>ASSESS RISK</small>
+                  </button>
+                </li>
+                <li class="process-stage" style="--order: 2">
+                  <button class="process-node" type="button" data-index="2" aria-pressed="false" aria-label="Tahap 3, Build">
+                    <span class="node-index">03</span>
+                    <span class="node-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-2-12-4 14"/></svg></span>
+                    <strong>Build</strong><small>SHIP CHANGE</small>
+                  </button>
+                </li>
+                <li class="process-stage" style="--order: 3">
+                  <button class="process-node" type="button" data-index="3" aria-pressed="false" aria-label="Tahap 4, Integrate">
+                    <span class="node-index">04</span>
+                    <span class="node-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="m9 11 6-4m-6 6 6 4"/></svg></span>
+                    <strong>Integrate</strong><small>CONNECT ALL</small>
+                  </button>
+                </li>
+                <li class="process-stage" style="--order: 4">
+                  <button class="process-node" type="button" data-index="4" aria-pressed="false" aria-label="Tahap 5, Monitor">
+                    <span class="node-index">05</span>
+                    <span class="node-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-6 4 12 2-6h6"/><rect x="3" y="3" width="18" height="18" rx="3"/></svg></span>
+                    <strong>Monitor</strong><small>LIVE SIGNAL</small>
+                  </button>
+                </li>
+              </ol>
+            </div>
+
+            <div class="process-readout" role="status" aria-live="polite" aria-atomic="true">
+              <span id="process-number">STAGE 01</span>
+              <div><strong id="process-name">Intake</strong><p id="process-description">Menerima request, data, tiket, dan event dari seluruh kanal bisnis.</p></div>
+              <span class="readout-state">ACTIVE</span>
+            </div>
+
+            <div class="telemetry-panel" aria-label="System telemetry">
+              <div><span>System health</span><strong><i class="health-dot"></i> 99.98%</strong></div>
+              <div><span>Throughput</span><strong id="throughput-value">1,284/hr</strong></div>
+              <div><span>System status</span><strong class="online-status">Operational</strong></div>
+            </div>
+          </section>
+        </section>
+
+        <section id="about" class="about section-pad">
+          <div class="section-kicker reveal">01 / About me</div>
+          <div class="about-layout">
+            <h2 class="section-title reveal">I bridge the gap between <em>people, process,</em> and <em>technology.</em></h2>
+            <div class="about-copy reveal">
+              <p>Memimpin transformasi TI, governance, dan tim lintas fungsi untuk mempercepat pertumbuhan bisnis.</p>
+              <p>Teknologi terbaik membuat kerja lebih mudah dan keputusan lebih tajam.</p>
+              <a class="inline-arrow" href="#expertise">Lihat area keahlian <span>↗</span></a>
+            </div>
+          </div>
+
+          <div class="principles-grid">
+            <article class="principle-card reveal">
+              <span class="card-number">01</span>
+              <div class="card-icon">◇</div>
+              <h3>Business first</h3>
+              <p>Teknologi selalu dimulai dari nilai bisnis.</p>
+            </article>
+            <article class="principle-card reveal">
+              <span class="card-number">02</span>
+              <div class="card-icon">⌁</div>
+              <h3>Built to scale</h3>
+              <p>Sistem siap tumbuh tanpa kompleksitas.</p>
+            </article>
+            <article class="principle-card reveal">
+              <span class="card-number">03</span>
+              <div class="card-icon">◎</div>
+              <h3>People powered</h3>
+              <p>Perubahan kuat lahir dari kolaborasi.</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="experience" class="experience section-pad" aria-labelledby="experience-title">
+          <div class="section-kicker reveal">02 / Selected experience</div>
+          <div class="section-heading-row reveal">
+            <h2 id="experience-title" class="section-title">A track record of<br /><em>transformation.</em></h2>
+            <p>Memimpin strategi, delivery, dan process excellence.</p>
+          </div>
+
+          <div class="timeline">
+            <article class="timeline-item reveal">
+              <div class="timeline-period">2021 — PRESENT</div>
+              <div class="timeline-dot"></div>
+              <div class="timeline-content">
+                <span class="company">PT Nusantara Digital Group</span>
+                <h3>IT & Business Process Head</h3>
+                <p>Memimpin strategi TI untuk 8 unit bisnis: governance, ERP, security, dan data.</p>
+                <ul class="tag-list"><li>IT Strategy</li><li>Enterprise Architecture</li><li>COBIT</li></ul>
+              </div>
+              <div class="timeline-impact"><strong>32%</strong><span>faster cycle time</span></div>
+            </article>
+
+            <article class="timeline-item reveal">
+              <div class="timeline-period">2017 — 2021</div>
+              <div class="timeline-dot"></div>
+              <div class="timeline-content">
+                <span class="company">PT Sagara Retail Indonesia</span>
+                <h3>Senior IT Transformation Manager</h3>
+                <p>Migrasi cloud dan otomatisasi untuk 120+ cabang.</p>
+                <ul class="tag-list"><li>Cloud</li><li>ERP</li><li>Change Management</li></ul>
+              </div>
+              <div class="timeline-impact"><strong>99.8%</strong><span>service availability</span></div>
+            </article>
+
+            <article class="timeline-item reveal">
+              <div class="timeline-period">2013 — 2017</div>
+              <div class="timeline-dot"></div>
+              <div class="timeline-content">
+                <span class="company">Arunika Financial Services</span>
+                <h3>Business Process & System Analyst</h3>
+                <p>Mengubah kebutuhan bisnis menjadi solusi digital.</p>
+                <ul class="tag-list"><li>Business Analysis</li><li>BPMN</li><li>Data Analytics</li></ul>
+              </div>
+              <div class="timeline-impact"><strong>18K+</strong><span>hours saved yearly</span></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="expertise" class="expertise section-pad" aria-labelledby="expertise-title">
+          <div class="expertise-intro reveal">
+            <div class="section-kicker light">03 / Core expertise</div>
+            <h2 id="expertise-title">Turning strategy<br />into <em>momentum.</em></h2>
+            <p>Strategi teknologi yang menghasilkan perubahan nyata.</p>
+          </div>
+          <div class="skills-list">
+            <article class="skill-row reveal"><span>01</span><h3>IT Strategy & Governance</h3><div class="skill-bar"><i style="--level: 94%"></i></div><b>94</b></article>
+            <article class="skill-row reveal"><span>02</span><h3>Business Process Excellence</h3><div class="skill-bar"><i style="--level: 91%"></i></div><b>91</b></article>
+            <article class="skill-row reveal"><span>03</span><h3>Digital Transformation</h3><div class="skill-bar"><i style="--level: 89%"></i></div><b>89</b></article>
+            <article class="skill-row reveal"><span>04</span><h3>Cybersecurity & Risk</h3><div class="skill-bar"><i style="--level: 82%"></i></div><b>82</b></article>
+            <article class="skill-row reveal"><span>05</span><h3>Leadership & Change</h3><div class="skill-bar"><i style="--level: 92%"></i></div><b>92</b></article>
+          </div>
+        </section>
+
+        <section class="contact section-pad reveal">
+          <span class="section-kicker">04 / Let's work together</span>
+          <h2>Have a complex challenge?<br /><em>Let's make it simple.</em></h2>
+          <a class="contact-button" href="mailto:marie@example.com">Start a conversation <span>↗</span></a>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <a class="brand" href="#home"><span class="brand-mark">M</span><span>MARIE<span class="brand-dot">.</span></span></a>
+        <p>© <span id="year"></span> Marie. Built with clarity & purpose.</p>
+        <div><a href="#">LinkedIn</a><a href="mailto:marie@example.com">Email</a><a href="#home">Back to top ↑</a></div>
+      </footer>
     </div>
-    <div class="pred-reason" id="predReason">Prioritas layar atas: prediksi, input angka, dan persentase indikator.</div>
-  </div>
 
-  <div class="card input-card">
-    <div class="input-row">
-      <button class="box left active" id="leftBox">
-        <div class="side-name">◀ Kiri</div>
-        <div class="digit" id="dispLeft">–</div>
-        <div class="tap-hint">tap untuk pilih</div>
-      </button>
-      <div class="vs">VS</div>
-      <button class="box right" id="rightBox">
-        <div class="side-name">Kanan ▶</div>
-        <div class="digit" id="dispRight">–</div>
-        <div class="tap-hint">tap untuk pilih</div>
-      </button>
-    </div>
-
-    <div class="keypad" id="keypad"></div>
-    <button class="submit-btn" id="submitBtn">Rekam Ronde</button>
-
-    <div class="stats">
-      <div class="card stat"><div class="v blue" id="statLeft">0</div><div class="l">Kiri</div></div>
-      <div class="card stat"><div class="v red" id="statRight">0</div><div class="l">Kanan</div></div>
-      <div class="card stat"><div class="v drawc" id="statDraw">0</div><div class="l">Seri</div></div>
-      <div class="card stat"><div class="v gold" id="statAcc">—</div><div class="l">Akurasi</div></div>
-    </div>
-  </div>
-
-  <div class="card section">
-    <div class="section-title">Persentase Indikator</div>
-    <div class="indicator-list" id="indicatorList"></div>
-    <div class="hint">Indikator diurutkan dari bobot otomatis terbesar. Auto weighting aktif secara default.</div>
-  </div>
-
-  <div class="card section">
-    <div class="section-title">Info Combo Aktif</div>
-    <div class="info-line" id="activeCombo">Belum ada combo aktif.</div>
-    <div class="info-line" id="sourceInfo" style="margin-top:8px">Belum ada sumber prediksi.</div>
-  </div>
-
-  <div class="card section">
-    <div class="section-title">History Combo Aktif</div>
-    <div id="comboHistory"></div>
-    <div class="hint" id="comboHistoryHint">Belum ada history combo aktif.</div>
-  </div>
-
-  <div class="card section">
-    <div class="section-title">Tabel Combo 00–99</div>
-    <div class="matrix-wrap"><table class="matrix" id="matrixTable"></table></div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-<script src="auth.js"></script>
-<script src="app.js"></script>
-</body>
+    <noscript><p class="no-script">Aktifkan JavaScript untuk melihat animasi interaktif.</p></noscript>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js" defer></script>
+    <script src="script.js" defer></script>
+  </body>
 </html>
